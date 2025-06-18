@@ -1,0 +1,14 @@
+# Python
+__pycache__
+
+# NPM
+/node_modules/
+
+# IDE's
+.idea/
+
+# Machine-specific config
+/.env
+
+# Build artifacts
+/frontend/dist

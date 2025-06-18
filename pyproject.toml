@@ -1,0 +1,13 @@
+[project]
+name = "ksar"
+version = "1.0.0"
+description = "Комплексна система аналізу результатів випробувань зразків-свідків та ресурсу корпусів реакторів (КСАР)"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115.13",
+    "oracledb>=3.1.1",
+    "pydantic-settings>=2.9.1",
+    "rich>=14.0.0",
+    "sqlalchemy>=2.0.41",
+    "uvicorn[standard]>=0.34.3",
+]

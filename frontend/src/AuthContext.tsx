@@ -1,0 +1,80 @@
+import { createContext, useContext, useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import Login from "./Login";
+
+interface User {
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
+interface AuthContextType {
+  user: User;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Retrieves data about the current user
+  async function fetchUserData() {
+    console.log("Retrieving data about current user...");
+    const response = await fetch("/api/auth/me");
+    console.log(response);
+    if (response.ok) {
+      const me = await response.json();
+      console.log("Current user:", me);
+      setUser(me);
+    }
+    setLoading(false);
+  }
+
+  // Called when unauthorized user successfully logs in
+  function onLoginSuccess() {
+    window.location.reload();
+  }
+
+  // Logout function
+  async function handleLogout() {
+    try {
+      fetch("/accounts/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": Cookies.get("csrftoken") || "",
+        },
+        credentials: "include",
+      }).then(() => (window.location.href = "/"));
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  }
+
+  // Called once on page load
+  useEffect(() => {
+    fetchUserData().catch(console.error);
+  }, []);
+
+  return loading ? (
+    // While fetching user data
+    ""
+  ) : user === null ? (
+    // User is unauthorized, show login form
+    <Login onLoginSuccess={onLoginSuccess} />
+  ) : (
+    // User authorized successfully, show app content
+    <AuthContext.Provider value={{ user: user, logout: handleLogout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
+}
