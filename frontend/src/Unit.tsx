@@ -111,8 +111,53 @@ export default function Unit() {
 
     const color = occupied ? "black" : "white";
 
+    const history_periods: {
+      container_sys_name: string;
+      load_date: Date;
+      extract_date: Date | undefined;
+    }[] = [];
+    let last_load_event:
+      | {
+          container_sys_name: string;
+          load_date: Date;
+        }
+      | undefined = undefined;
+
+    history.forEach((event) => {
+      if (event.type === "load") {
+        if (last_load_event !== undefined) {
+          throw new Error("Load event into occupied placement!");
+        } else {
+          last_load_event = {
+            container_sys_name: event.container_sys_name,
+            load_date: event.date,
+          };
+        }
+      } else {
+        if (last_load_event === undefined) {
+          throw new Error("Extract event from empty placement!");
+        } else {
+          history_periods.push({
+            container_sys_name: last_load_event.container_sys_name,
+            load_date: last_load_event.load_date,
+            extract_date: event.date,
+          });
+          last_load_event = undefined;
+        }
+      }
+    });
+
+    if (last_load_event !== undefined) {
+      history_periods.push({
+        container_sys_name: last_load_event.container_sys_name,
+        load_date: last_load_event.load_date,
+        extract_date: undefined,
+      });
+    }
+
     return {
       name: name,
+      history_periods: history_periods,
       last_sys_name: last_sys_name,
       color: color,
       x: x,
@@ -190,6 +235,16 @@ export default function Unit() {
       <div
         style={{ flex: "1", padding: "20px", borderRight: "1px solid #ccc" }}
       >
+        <h3
+          style={{
+            marginBottom: "15px",
+            color: "#333",
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        >
+          Інформація про блок
+        </h3>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -316,9 +371,149 @@ export default function Unit() {
             </tr>
           </tbody>
         </table>
+        {/* Hovered placement card */}
+        {hoveredPlacement && (
+          <div
+            style={{
+              marginTop: "20px",
+              backgroundColor: "white",
+              border: "2px solid #ccc",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+              fontSize: "14px",
+              fontWeight: "bold",
+              color: "#333",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "16px",
+                color: "#007bff",
+                marginBottom: "12px",
+              }}
+            >
+              Місце {hoveredPlacement}
+            </div>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "11px",
+                marginTop: "8px",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "4px 6px",
+                      backgroundColor: "#f5f5f5",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    Збірка
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "4px 6px",
+                      backgroundColor: "#f5f5f5",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    Завантажено
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "4px 6px",
+                      backgroundColor: "#f5f5f5",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    Вивантажено
+                  </th>
+                </tr>
+              </thead>{" "}
+              <tbody>
+                {/* Get data for the hovered placement from placements_data */}
+                {(() => {
+                  const placementData = placements_data.find(
+                    (p) => p.name === hoveredPlacement
+                  );
+
+                  if (!placementData) return null;
+
+                  // Sort history periods by load date
+                  const sortedPeriods = [...placementData.history_periods].sort(
+                    (a, b) =>
+                      new Date(a.load_date).getTime() -
+                      new Date(b.load_date).getTime()
+                  );
+                  return sortedPeriods.map((period, index) => (
+                    <tr
+                      key={index}
+                      style={{
+                        backgroundColor: period.extract_date
+                          ? "transparent"
+                          : "#ffe6e6",
+                      }}
+                    >
+                      <td
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "4px 6px",
+                          fontSize: "10px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {period.container_sys_name}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "4px 6px",
+                          fontSize: "10px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {new Date(period.load_date).toLocaleDateString("uk-UA")}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "4px 6px",
+                          fontSize: "10px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {period.extract_date ? (
+                          new Date(period.extract_date).toLocaleDateString(
+                            "uk-UA"
+                          )
+                        ) : (
+                          <i>опромінюється</i>
+                        )}
+                      </td>
+                    </tr>
+                  ));
+                })()}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       {/* Center section - 2/4 (remaining) space */}
       <div
+        id="main-cross-section-div"
         style={{
           flex: "2",
           display: "flex",
@@ -326,6 +521,7 @@ export default function Unit() {
           justifyContent: "center",
           padding: "20px",
           paddingTop: "40px",
+          position: "relative", // Add relative positioning for the card
         }}
       >
         <div style={{ textAlign: "center", maxHeight: "100%" }}>
@@ -350,13 +546,13 @@ export default function Unit() {
               src={crossSectionImage}
               style={{
                 maxWidth: "100%",
-                maxHeight: "calc(100vh - 60px - 150px)", // 60px navbar + 150px for title and padding
+                maxHeight: "calc(100vh - 60px - 200px)", // 60px navbar + 200px for title and padding
                 width: "auto",
                 height: "auto",
                 display: "block",
               }}
               alt="Вигородка"
-            />{" "}
+            />
             <svg
               xmlns="http://www.w3.org/2000/svg"
               version="1.1"
@@ -374,7 +570,7 @@ export default function Unit() {
               {placements_data.map((placement) => (
                 <g key={placement.name}>
                   <circle
-                    id={`placement-circle-${placement.name}`}
+                    id={`placement-circle-highlight-${placement.name}`}
                     cx={placement.x}
                     cy={placement.y}
                     r="150"
@@ -389,7 +585,7 @@ export default function Unit() {
                     onMouseLeave={() => setHoveredPlacement(null)}
                   />
                   <circle
-                    id={`placement-circle-${placement.name}`}
+                    id={`placement-circle-black-${placement.name}`}
                     cx={placement.x}
                     cy={placement.y}
                     r="110"
@@ -450,6 +646,16 @@ export default function Unit() {
           maxHeight: "calc(100vh - 60px)",
         }}
       >
+        <h3
+          style={{
+            marginBottom: "15px",
+            color: "#333",
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        >
+          Комплекти ЗС
+        </h3>
         {Object.entries(complects_data).map(([complect_name, periods_data]) => (
           <Card
             key={complect_name}
@@ -532,15 +738,17 @@ export default function Unit() {
                       </th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {periods_data.map((period_data) => (
                       <tr
                         key={period_data.load_id}
                         style={{
-                          backgroundColor: period_data.extract_date
-                            ? "transparent"
-                            : "#ffe6e6",
+                          backgroundColor:
+                            hoveredPlacement === period_data.placement_name
+                              ? "#ffa50080"
+                              : period_data.extract_date
+                              ? "transparent"
+                              : "#ffe6e6",
                           cursor: "pointer",
                         }}
                         onMouseEnter={() =>
@@ -558,7 +766,7 @@ export default function Unit() {
                           }}
                         >
                           {period_data.container_sys_name}
-                        </td>
+                        </td>{" "}
                         <td
                           style={{
                             border: "1px solid #ddd",
@@ -568,7 +776,9 @@ export default function Unit() {
                             minWidth: "90px",
                           }}
                         >
-                          {period_data.load_date.toString()}
+                          {new Date(period_data.load_date).toLocaleDateString(
+                            "uk-UA"
+                          )}
                         </td>
                         <td
                           style={{
@@ -580,7 +790,7 @@ export default function Unit() {
                           }}
                         >
                           <strong>{period_data.placement_name}</strong>
-                        </td>
+                        </td>{" "}
                         <td
                           style={{
                             border: "1px solid #ddd",
@@ -591,7 +801,9 @@ export default function Unit() {
                           }}
                         >
                           {period_data.extract_date ? (
-                            period_data.extract_date.toString()
+                            new Date(
+                              period_data.extract_date
+                            ).toLocaleDateString("uk-UA")
                           ) : (
                             <i>опромінюється</i>
                           )}
