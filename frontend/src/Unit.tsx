@@ -41,6 +41,7 @@ export default function Unit() {
   const { name_eng } = useParams();
   const [loading, setLoading] = useState(true);
   const [unitData, setUnitData] = useState<UnitData | undefined>(undefined);
+  const [hoveredPlacement, setHoveredPlacement] = useState<string | null>(null);
 
   // Retrieves data about the unit
   async function fetchUnitData() {
@@ -90,8 +91,6 @@ export default function Unit() {
     complects,
   } = unitData;
 
-  console.log(unitData);
-
   const placements_data = placements.map(function (placement) {
     const { sector, sector_num, name } = placement.placement;
     const [x, y] = placements_coords[sector][sector_num];
@@ -100,7 +99,7 @@ export default function Unit() {
     const history = placement.history;
 
     let occupied = false;
-    let last_sys_name = undefined;
+    let last_sys_name: string | undefined = undefined;
 
     if (history.length > 0) {
       const last = history[history.length - 1];
@@ -141,13 +140,13 @@ export default function Unit() {
 
           if (period[0].type !== "load") {
             throw new Error(
-              "Expected load type for the first item in the period",
+              "Expected load type for the first item in the period"
             );
           }
           if (period.length > 1) {
             if (period[1].type !== "extract") {
               throw new Error(
-                "Expected extract type for the second item in the period",
+                "Expected extract type for the second item in the period"
               );
             }
           }
@@ -176,7 +175,7 @@ export default function Unit() {
       });
 
       return [complect_name, periods_data];
-    }),
+    })
   );
   return (
     <div
@@ -357,7 +356,7 @@ export default function Unit() {
                 display: "block",
               }}
               alt="Вигородка"
-            />
+            />{" "}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               version="1.1"
@@ -369,22 +368,54 @@ export default function Unit() {
                 left: 0,
                 width: "100%",
                 height: "100%",
-                pointerEvents: "none",
+                pointerEvents: "all",
               }}
             >
               {placements_data.map((placement) => (
-                <g>
+                <g key={placement.name}>
                   <circle
                     id={`placement-circle-${placement.name}`}
-                    key={placement.name}
+                    cx={placement.x}
+                    cy={placement.y}
+                    r="150"
+                    fill={
+                      hoveredPlacement === placement.name
+                        ? "orange"
+                        : "transparent"
+                    }
+                    fillOpacity={hoveredPlacement === placement.name ? 0.7 : 0}
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={() => setHoveredPlacement(placement.name)}
+                    onMouseLeave={() => setHoveredPlacement(null)}
+                  />
+                  <circle
+                    id={`placement-circle-${placement.name}`}
+                    cx={placement.x}
+                    cy={placement.y}
+                    r="110"
+                    fill="black"
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={() => setHoveredPlacement(placement.name)}
+                    onMouseLeave={() => setHoveredPlacement(null)}
+                  />
+                  <circle
+                    id={`placement-circle-inner-${placement.name}`}
+                    cx={placement.x}
+                    cy={placement.y}
+                    r="90"
+                    fill="white"
+                    style={{ pointerEvents: "none" }}
+                  />
+                  <circle
+                    id={`placement-circle-core-${placement.name}`}
                     cx={placement.x}
                     cy={placement.y}
                     r="70"
                     fill={placement.color}
+                    style={{ pointerEvents: "none" }}
                   />
                   <text
                     id={`placement-text-${placement.name}`}
-                    key={placement.name}
                     x={placement.text_x}
                     textAnchor="middle"
                     y={placement.text_y + 50}
@@ -395,16 +426,13 @@ export default function Unit() {
                     }
                     fontSize="150"
                     fontFamily="sans-serif"
+                    style={{ pointerEvents: "none" }}
                   >
                     {placement.last_sys_name
                       ? placement.last_sys_name
                       : placement.name}
                   </text>
                 </g>
-              ))}
-
-              {placements_data.map((placement) => (
-                <g></g>
               ))}
             </svg>
           </div>
@@ -513,7 +541,12 @@ export default function Unit() {
                           backgroundColor: period_data.extract_date
                             ? "transparent"
                             : "#ffe6e6",
+                          cursor: "pointer",
                         }}
+                        onMouseEnter={() =>
+                          setHoveredPlacement(period_data.placement_name)
+                        }
+                        onMouseLeave={() => setHoveredPlacement(null)}
                       >
                         <td
                           style={{
@@ -557,9 +590,11 @@ export default function Unit() {
                             minWidth: "90px",
                           }}
                         >
-                          {period_data.extract_date
-                            ? period_data.extract_date.toString()
-                            : "-"}
+                          {period_data.extract_date ? (
+                            period_data.extract_date.toString()
+                          ) : (
+                            <i>опромінюється</i>
+                          )}
                         </td>
                       </tr>
                     ))}
