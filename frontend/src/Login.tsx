@@ -4,7 +4,6 @@ import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Cookies from "js-cookie";
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -38,9 +37,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "X-CSRFToken": Cookies.get("csrftoken") || "",
+          "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           username: login,
           password: password,
@@ -59,7 +58,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     } catch (error) {
       setBusy(false);
       console.error("Error during login:", error);
-      setLoginError("Невідома помилка. Спробуйте пізніше.");
+      setLoginError("Невідома помилка!");
     }
   }
 
@@ -69,9 +68,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       className="d-flex align-items-center justify-content-center min-vh-100"
     >
       <Row className="w-100">
-        {" "}
         <Col xs={12} sm={8} md={6} lg={4} xl={3} className="mx-auto">
-          {" "}
           <div className="p-4 border rounded shadow-sm bg-white">
             <h3 className="text-center mb-4">Вхід в КСАР</h3>
 
@@ -89,7 +86,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </div>
 
               <Form.Group className="mb-3" controlId="formBasicLogin">
-                <Form.Label>Логін</Form.Label>{" "}
+                <Form.Label>Логін</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="Введіть логін"
@@ -107,7 +104,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formBasicPassword">
-                <Form.Label>Пароль</Form.Label>{" "}
+                <Form.Label>Пароль</Form.Label>
                 <Form.Control
                   type="password"
                   placeholder="Введіть пароль"

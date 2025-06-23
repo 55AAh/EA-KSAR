@@ -1,12 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import Cookies from "js-cookie";
 import Login from "./Login";
 
 interface User {
   username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
 }
 
 interface AuthContextType {
@@ -19,12 +15,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
   // Retrieves data about the current user
   async function fetchUserData() {
     console.log("Retrieving data about current user...");
-    const response = await fetch("/api/auth/me");
-    console.log(response);
+    const response = await fetch("/api/auth/me", {
+      credentials: "include",
+    });
     if (response.ok) {
       const me = await response.json();
       console.log("Current user:", me);
@@ -37,20 +33,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function onLoginSuccess() {
     window.location.reload();
   }
-
   // Logout function
   async function handleLogout() {
     try {
-      fetch("/accounts/logout/", {
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "X-CSRFToken": Cookies.get("csrftoken") || "",
+          "Content-Type": "application/json",
         },
         credentials: "include",
-      }).then(() => (window.location.href = "/"));
+      });
+
+      if (!response.ok) {
+        console.error("Logout failed:", response.status, response.statusText);
+      }
     } catch (error) {
       console.error("Error during logout:", error);
+    } finally {
+      window.location.href = "/";
     }
   }
 
