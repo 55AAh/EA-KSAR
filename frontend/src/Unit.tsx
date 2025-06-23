@@ -41,7 +41,9 @@ export default function Unit() {
   const { name_eng } = useParams();
   const [loading, setLoading] = useState(true);
   const [unitData, setUnitData] = useState<UnitData | undefined>(undefined);
-  const [hoveredPlacement, setHoveredPlacement] = useState<string | null>(null);
+  const [selectedPlacement, setSelectedPlacement] = useState<string | null>(
+    null
+  );
 
   // Retrieves data about the unit
   async function fetchUnitData() {
@@ -233,7 +235,12 @@ export default function Unit() {
     >
       {/* Left section - 1/4 space */}
       <div
-        style={{ flex: "1", padding: "20px", borderRight: "1px solid #ccc" }}
+        style={{
+          flex: "1",
+          minWidth: "320px",
+          padding: "20px",
+          borderRight: "1px solid #ccc",
+        }}
       >
         <h3
           style={{
@@ -371,8 +378,8 @@ export default function Unit() {
             </tr>
           </tbody>
         </table>
-        {/* Hovered placement card */}
-        {hoveredPlacement && (
+        {/* Selected/Hovered placement card */}
+        {selectedPlacement && (
           <div
             style={{
               marginTop: "20px",
@@ -393,7 +400,7 @@ export default function Unit() {
                 marginBottom: "12px",
               }}
             >
-              Місце {hoveredPlacement}
+              Місце {selectedPlacement}
             </div>
             <table
               style={{
@@ -442,12 +449,12 @@ export default function Unit() {
                     Вивантажено
                   </th>
                 </tr>
-              </thead>{" "}
+              </thead>
               <tbody>
-                {/* Get data for the hovered placement from placements_data */}
+                {/* Get data for the selected placement from placements_data */}
                 {(() => {
                   const placementData = placements_data.find(
-                    (p) => p.name === hoveredPlacement
+                    (p) => p.name === selectedPlacement
                   );
 
                   if (!placementData) return null;
@@ -566,6 +573,12 @@ export default function Unit() {
                 height: "100%",
                 pointerEvents: "all",
               }}
+              onClick={(e) => {
+                // Click outside any placement to deselect
+                if (e.target === e.currentTarget) {
+                  setSelectedPlacement(null);
+                }
+              }}
             >
               {placements_data.map((placement) => (
                 <g key={placement.name}>
@@ -575,14 +588,12 @@ export default function Unit() {
                     cy={placement.y}
                     r="150"
                     fill={
-                      hoveredPlacement === placement.name
+                      selectedPlacement === placement.name
                         ? "orange"
                         : "transparent"
                     }
-                    fillOpacity={hoveredPlacement === placement.name ? 0.7 : 0}
+                    fillOpacity={selectedPlacement === placement.name ? 0.7 : 0}
                     style={{ cursor: "pointer" }}
-                    onMouseEnter={() => setHoveredPlacement(placement.name)}
-                    onMouseLeave={() => setHoveredPlacement(null)}
                   />
                   <circle
                     id={`placement-circle-black-${placement.name}`}
@@ -591,8 +602,14 @@ export default function Unit() {
                     r="110"
                     fill="black"
                     style={{ cursor: "pointer" }}
-                    onMouseEnter={() => setHoveredPlacement(placement.name)}
-                    onMouseLeave={() => setHoveredPlacement(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPlacement(
+                        selectedPlacement === placement.name
+                          ? null
+                          : placement.name
+                      );
+                    }}
                   />
                   <circle
                     id={`placement-circle-inner-${placement.name}`}
@@ -744,17 +761,20 @@ export default function Unit() {
                         key={period_data.load_id}
                         style={{
                           backgroundColor:
-                            hoveredPlacement === period_data.placement_name
+                            selectedPlacement === period_data.placement_name
                               ? "#ffa50080"
                               : period_data.extract_date
                               ? "transparent"
                               : "#ffe6e6",
                           cursor: "pointer",
                         }}
-                        onMouseEnter={() =>
-                          setHoveredPlacement(period_data.placement_name)
+                        onClick={() =>
+                          setSelectedPlacement(
+                            selectedPlacement === period_data.placement_name
+                              ? null
+                              : period_data.placement_name
+                          )
                         }
-                        onMouseLeave={() => setHoveredPlacement(null)}
                       >
                         <td
                           style={{
@@ -766,7 +786,7 @@ export default function Unit() {
                           }}
                         >
                           {period_data.container_sys_name}
-                        </td>{" "}
+                        </td>
                         <td
                           style={{
                             border: "1px solid #ddd",
@@ -790,7 +810,7 @@ export default function Unit() {
                           }}
                         >
                           <strong>{period_data.placement_name}</strong>
-                        </td>{" "}
+                        </td>
                         <td
                           style={{
                             border: "1px solid #ddd",
