@@ -2,7 +2,7 @@ import { useParams } from "react-router";
 import { useState, useEffect } from "react";
 
 import type { Placement, Unit } from "./types";
-import { Container, Spinner, Card } from "react-bootstrap";
+import { Container, Spinner, Card, Button } from "react-bootstrap";
 import crossSectionImage from "./assets/cross-section.png";
 
 interface UnitData {
@@ -53,6 +53,46 @@ export default function Unit() {
       setUnitData(unitData);
     }
     setLoading(false);
+  }
+
+  // Export unit data
+  async function exportData() {
+    try {
+      const response = await fetch(`/api/unit/${name_eng}/export`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        // Get the filename from the response headers or use a default
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = `unit_${name_eng}_export.xlsx`;
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="(.+)"/);
+          if (match) {
+            filename = match[1];
+          }
+        }
+
+        // Create a blob from the response and download it
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert("Помилка експорту даних");
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      alert("Помилка експорту даних");
+    }
   }
 
   // Called once on page load
@@ -531,6 +571,21 @@ export default function Unit() {
           position: "relative", // Add relative positioning for the card
         }}
       >
+        {/* Export button in upper right corner */}
+        <Button
+          variant="primary"
+          onClick={exportData}
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            fontSize: "12px",
+            padding: "6px 12px",
+            zIndex: 10,
+          }}
+        >
+          Експорт
+        </Button>
         <div style={{ textAlign: "center", maxHeight: "100%" }}>
           <h1
             style={{

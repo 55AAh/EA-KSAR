@@ -1,6 +1,11 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import joinedload
 from typing import List, Union
+from io import BytesIO
+from datetime import datetime
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
 
 from backend.db import DbSessionDep
 from backend.tables import (
@@ -331,3 +336,251 @@ def unit_detail(name_eng: str, db: DbSessionDep):
             for complect_name, complect in complects.items()
         },
     }
+
+
+@unit_router.get("/unit/{name_eng}/export", operation_id="export_unit_data")
+def export_unit_data(name_eng: str, db: DbSessionDep):
+    """
+    Export unit data to Excel file.
+    """
+    # Get unit data using the same logic as unit_detail
+    unit = db.query(NppUnitTable).filter(NppUnitTable.name_eng == name_eng).first()
+
+    if unit is None:
+        raise HTTPException(status_code=404, detail="Unit not found")
+
+    # Get all the data (reusing logic from unit_detail)
+    unit_data = unit_detail(name_eng, db)  # Create Excel workbook
+    wb = openpyxl.Workbook()
+
+    # Remove default sheet
+    default_sheet = wb.active
+    if default_sheet:
+        wb.remove(default_sheet)
+
+    # Create Unit Info sheet
+    ws_unit = wb.create_sheet("Інформація про блок")
+
+    # Header style
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(
+        start_color="366092", end_color="366092", fill_type="solid"
+    )
+
+    # Unit information
+    unit_info = unit_data["unit"]
+    ws_unit.append(["Параметр", "Значення"])
+
+    # Style header
+    for cell in ws_unit[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    # Add unit data
+    ws_unit.append(["Номер блоку", unit_info.get("num", "-")])
+    ws_unit.append(["Найменування блоку", unit_info.get("name", "-")])
+    ws_unit.append(["Найменування блоку (англ.)", unit_info.get("name_eng", "-")])
+    ws_unit.append(["Проект", unit_info.get("design", "-")])
+    ws_unit.append(["Черга", unit_info.get("stage", "-")])
+    ws_unit.append(
+        [
+            "Встановлена потужність, МВ",
+            round(unit_info["power"]) if unit_info.get("power") else "-",
+        ]
+    )
+    ws_unit.append(
+        [
+            "Дата початку експлуатації",
+            datetime.fromisoformat(unit_info["start_date"]).strftime("%d.%m.%Y")
+            if unit_info.get("start_date")
+            else "-",
+        ]
+    )  # Auto-adjust column widths
+    for column in ws_unit.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except (TypeError, AttributeError):
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws_unit.column_dimensions[column_letter].width = adjusted_width
+
+    # Create Placements sheet
+    ws_placements = wb.create_sheet("Історія місць")
+
+    # Placements header
+    ws_placements.append(["Місце", "Збірка", "Завантажено", "Вивантажено"])
+
+    # Style header
+    for cell in ws_placements[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    # Process placements data
+    for placement_data in unit_data["placements"]:
+        placement_name = placement_data["placement"]["name"]
+
+        # Track load/extract pairs
+        history = placement_data["history"]
+        history_periods = []
+        last_load_event = None
+
+        for event in history:
+            if event["type"] == "load":
+                if last_load_event is not None:
+                    raise ValueError("Load event into occupied placement!")
+                last_load_event = {
+                    "container_sys_name": event["container_sys_name"],
+                    "load_date": event["date"],
+                }
+            else:  # extract
+                if last_load_event is None:
+                    raise ValueError("Extract event from empty placement!")
+                history_periods.append(
+                    {
+                        "container_sys_name": last_load_event["container_sys_name"],
+                        "load_date": last_load_event["load_date"],
+                        "extract_date": event["date"],
+                    }
+                )
+                last_load_event = None
+
+        # Add current load if exists
+        if last_load_event is not None:
+            history_periods.append(
+                {
+                    "container_sys_name": last_load_event["container_sys_name"],
+                    "load_date": last_load_event["load_date"],
+                    "extract_date": None,
+                }
+            )
+
+        # Sort by load date
+        history_periods.sort(key=lambda x: datetime.fromisoformat(x["load_date"]))
+
+        # Add rows to sheet
+        for period in history_periods:
+            load_date = datetime.fromisoformat(period["load_date"]).strftime("%d.%m.%Y")
+            extract_date = (
+                datetime.fromisoformat(period["extract_date"]).strftime("%d.%m.%Y")
+                if period["extract_date"]
+                else "опромінюється"
+            )
+
+            ws_placements.append(
+                [placement_name, period["container_sys_name"], load_date, extract_date]
+            )  # Auto-adjust column widths
+    for column in ws_placements.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except (TypeError, AttributeError):
+                pass
+        adjusted_width = min(max_length + 2, 30)
+        ws_placements.column_dimensions[column_letter].width = adjusted_width
+
+    # Create Complects sheets
+    for complect_name, complect_data in unit_data["complects"].items():
+        # Create sheet for each complect
+        ws_complect = wb.create_sheet(f"Комплект {complect_name}")
+
+        # Header
+        ws_complect.append(["Збірка", "Завантажено", "Місце", "Вивантажено"])
+
+        # Style header
+        for cell in ws_complect[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+
+        # Collect all periods from all container systems in this complect
+        all_periods = []
+
+        for container_sys in complect_data:
+            container_sys_name = container_sys["container_sys_name"]
+            history = container_sys["history"]
+
+            # Process history in pairs (load, extract)
+            i = 0
+            while i < len(history):
+                if history[i]["type"] == "load":
+                    load_event = history[i]
+                    extract_event = (
+                        history[i + 1]
+                        if i + 1 < len(history) and history[i + 1]["type"] == "extract"
+                        else None
+                    )
+
+                    load_date = datetime.fromisoformat(load_event["date"]).strftime(
+                        "%d.%m.%Y"
+                    )
+                    extract_date = (
+                        datetime.fromisoformat(extract_event["date"]).strftime(
+                            "%d.%m.%Y"
+                        )
+                        if extract_event
+                        else "опромінюється"
+                    )
+
+                    all_periods.append(
+                        {
+                            "container_sys_name": container_sys_name,
+                            "load_date": load_event["date"],
+                            "load_date_formatted": load_date,
+                            "placement_name": load_event["placement_name"],
+                            "extract_date_formatted": extract_date,
+                        }
+                    )
+
+                    i += 2 if extract_event else 1
+                else:
+                    i += 1
+
+        # Sort by load date and placement
+        all_periods.sort(key=lambda x: (x["load_date"], x["placement_name"]))
+
+        # Add rows
+        for period in all_periods:
+            ws_complect.append(
+                [
+                    period["container_sys_name"],
+                    period["load_date_formatted"],
+                    period["placement_name"],
+                    period["extract_date_formatted"],
+                ]
+            )  # Auto-adjust column widths
+        for column in ws_complect.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except (TypeError, AttributeError):
+                    pass
+            adjusted_width = min(max_length + 2, 25)
+            ws_complect.column_dimensions[column_letter].width = adjusted_width
+
+    # Save to BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    # Create filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"unit_{name_eng}_{timestamp}.xlsx"
+
+    # Return as streaming response
+    return StreamingResponse(
+        BytesIO(output.read()),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
