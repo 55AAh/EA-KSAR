@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 
 import type { Placement, Unit } from "./types";
@@ -39,6 +39,7 @@ interface UnitData {
 
 export default function Unit() {
   const { name_eng } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [unitData, setUnitData] = useState<UnitData | undefined>(undefined);
   const [selectedPlacement, setSelectedPlacement] = useState<string | null>(
@@ -273,6 +274,7 @@ export default function Unit() {
         minWidth: "1200px", // Ensure minimum total layout width
       }}
     >
+      {" "}
       {/* Left section - 1/4 space */}
       <div
         style={{
@@ -282,142 +284,168 @@ export default function Unit() {
           borderRight: "1px solid #ccc",
         }}
       >
+        {" "}
+        {/* Back link */}
+        <div
+          onClick={() => navigate("/navigator/units")}
+          style={{
+            marginBottom: "20px",
+            color: "#0d6efd",
+            cursor: "pointer",
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "16px",
+            transition: "color 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#0a58ca";
+            e.currentTarget.style.textDecoration = "underline";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#0d6efd";
+            e.currentTarget.style.textDecoration = "none";
+          }}
+        >
+          ← Назад до списку блоків
+        </div>{" "}
         <h3
           style={{
-            marginBottom: "15px",
+            marginBottom: "20px",
             color: "#333",
             fontWeight: "bold",
             textAlign: "center",
           }}
         >
           Інформація про блок
-        </h3>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  backgroundColor: "#e3f2fd",
-                }}
-              >
-                Параметр
-              </th>
-              <th
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  backgroundColor: "#e3f2fd",
-                }}
-              >
-                Значення
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  fontWeight: "bold",
-                }}
-              >
-                Номер блоку
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                {unit.num || "-"}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  fontWeight: "bold",
-                }}
-              >
-                Найменування блоку
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                {unit.name || "-"}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  fontWeight: "bold",
-                }}
-              >
-                Найменування блоку (англ.)
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                {unit.name_eng || "-"}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  fontWeight: "bold",
-                }}
-              >
-                Проект
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                {unit.design || "-"}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  fontWeight: "bold",
-                }}
-              >
-                Черга
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                {unit.stage || "-"}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  fontWeight: "bold",
-                }}
-              >
-                Встановлена потужність, МВ
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                {unit.power ? Math.round(unit.power).toString() : "-"}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "8px",
-                  fontWeight: "bold",
-                }}
-              >
-                Дата початку експлуатації
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                {unit.start_date
-                  ? new Date(unit.start_date).toLocaleDateString("uk-UA")
-                  : "-"}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        </h3>{" "}
+        <Card className="shadow-sm" style={{ border: "2px solid #dee2e6" }}>
+          <Card.Body className="p-0">
+            <div className="table-responsive">
+              <table className="table table-hover mb-0">
+                <tbody>
+                  <tr>
+                    <td
+                      className="fw-bold text-muted"
+                      style={{
+                        width: "45%",
+                        padding: "12px 16px",
+                        backgroundColor: "#f8f9fa",
+                        borderRight: "1px solid #dee2e6",
+                      }}
+                    >
+                      Номер блоку
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <span className="fw-semibold">{unit.num || "-"}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      className="fw-bold text-muted"
+                      style={{
+                        padding: "12px 16px",
+                        backgroundColor: "#f8f9fa",
+                        borderRight: "1px solid #dee2e6",
+                      }}
+                    >
+                      Найменування блоку
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <span className="fw-semibold">{unit.name || "-"}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      className="fw-bold text-muted"
+                      style={{
+                        padding: "12px 16px",
+                        backgroundColor: "#f8f9fa",
+                        borderRight: "1px solid #dee2e6",
+                      }}
+                    >
+                      Найменування блоку (англ.)
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <span className="fw-semibold">
+                        {unit.name_eng || "-"}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      className="fw-bold text-muted"
+                      style={{
+                        padding: "12px 16px",
+                        backgroundColor: "#f8f9fa",
+                        borderRight: "1px solid #dee2e6",
+                      }}
+                    >
+                      Проект
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <span className="fw-semibold">{unit.design || "-"}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      className="fw-bold text-muted"
+                      style={{
+                        padding: "12px 16px",
+                        backgroundColor: "#f8f9fa",
+                        borderRight: "1px solid #dee2e6",
+                      }}
+                    >
+                      Черга
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <span className="fw-semibold">{unit.stage || "-"}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      className="fw-bold text-muted"
+                      style={{
+                        padding: "12px 16px",
+                        backgroundColor: "#f8f9fa",
+                        borderRight: "1px solid #dee2e6",
+                      }}
+                    >
+                      Встановлена потужність, МВ
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <span className="fw-semibold">
+                        {unit.power ? Math.round(unit.power).toString() : "-"}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      className="fw-bold text-muted"
+                      style={{
+                        padding: "12px 16px",
+                        backgroundColor: "#f8f9fa",
+                        borderRight: "1px solid #dee2e6",
+                      }}
+                    >
+                      Дата початку експлуатації
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <span className="fw-semibold">
+                        {unit.start_date
+                          ? new Date(unit.start_date).toLocaleDateString(
+                              "uk-UA"
+                            )
+                          : "-"}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card.Body>
+        </Card>
         {/* Selected/Hovered placement card */}
         {selectedPlacement && (
           <div

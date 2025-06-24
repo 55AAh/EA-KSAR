@@ -283,14 +283,16 @@ const appItems: AppItem[] = [
 
 export default function Index() {
   const [newsItems, setNewsItems] = useState(initialNewsItems);
-  const [notifications, setNotifications] = useState(initialNotifications); // Common style for all app cards
+  const [notifications, setNotifications] = useState(initialNotifications);
+
+  // Common style for all app cards
   const appCardStyle = {
     transition: "transform 0.2s, box-shadow 0.2s",
     cursor: "pointer",
     backgroundColor: "#fafafa",
     border: "2px solid #e9ecef",
-    height: "140px",
-    width: "140px",
+    height: "160px",
+    width: "160px",
   };
 
   // Common hover handlers for all app cards
@@ -389,12 +391,12 @@ export default function Index() {
                 }}
               />
             </div>{" "}
-            {/* App Launcher Grid */}
+            {/* App Launcher Grid */}{" "}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 140px)",
-                gridTemplateRows: "repeat(2, 140px)",
+                gridTemplateColumns: "repeat(3, 160px)",
+                gridTemplateRows: "repeat(2, 160px)",
                 gap: "20px",
                 justifyContent: "center",
                 alignContent: "center",

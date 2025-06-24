@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Container, Row, Col, Card, Spinner, Badge } from "react-bootstrap";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import type { PlantUnits } from "./types";
 
@@ -19,6 +19,7 @@ const plantImages: Record<string, string> = {
 };
 
 export default function UnitSelector() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [plantsUnits, setPlantsUnits] = useState<PlantUnits[]>([]);
 
@@ -73,13 +74,41 @@ export default function UnitSelector() {
       </Container>
     );
   }
-
   return (
     <Container
       fluid
       className="py-4"
       style={{ minHeight: "calc(100vh - 60px)" }}
     >
+      {/* Back link - positioned at left edge */}
+      <div
+        onClick={() => navigate("/navigator")}
+        style={{
+          position: "absolute",
+          left: "20px",
+          top: "80px",
+          color: "#0d6efd",
+          cursor: "pointer",
+          textDecoration: "none",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          fontSize: "16px",
+          transition: "color 0.2s",
+          zIndex: 10,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "#0a58ca";
+          e.currentTarget.style.textDecoration = "underline";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "#0d6efd";
+          e.currentTarget.style.textDecoration = "none";
+        }}
+      >
+        ← Назад до навігатора
+      </div>
+
       <div className="d-flex align-items-center justify-content-center h-100">
         <div style={{ width: "100%", maxWidth: "1000px" }}>
           <Row xs={1} md={2} className="g-4 justify-content-center">
@@ -140,7 +169,7 @@ export default function UnitSelector() {
                         plant.units.map((unit) => (
                           <Link
                             key={unit.name_eng}
-                            to={`/units/${unit.name_eng}`}
+                            to={`/navigator/units/${unit.name_eng}`}
                             className="text-decoration-none"
                           >
                             <div
