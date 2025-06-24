@@ -80,13 +80,12 @@ export default function UnitSelector() {
       className="py-4"
       style={{ minHeight: "calc(100vh - 60px)" }}
     >
-      {/* Back link - positioned at left edge */}
+      {/* Back link - positioned at left side, above cards */}
       <div
         onClick={() => navigate("/navigator")}
         style={{
-          position: "absolute",
-          left: "20px",
-          top: "80px",
+          marginBottom: "20px",
+          marginLeft: "20px",
           color: "#0d6efd",
           cursor: "pointer",
           textDecoration: "none",
@@ -95,7 +94,7 @@ export default function UnitSelector() {
           gap: "8px",
           fontSize: "16px",
           transition: "color 0.2s",
-          zIndex: 10,
+          width: "fit-content",
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.color = "#0a58ca";
