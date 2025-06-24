@@ -1,153 +1,434 @@
-import { useState, useEffect } from "react";
-import { Container, Row, Col, Card, Spinner, Badge } from "react-bootstrap";
+import { Container, Card, Badge, Button } from "react-bootstrap";
 import { Link } from "react-router";
+import { useState } from "react";
 
-import type { PlantUnits } from "./types";
+// Types for feed items
+interface FeedItem {
+  id: number;
+  title: string;
+  preview: string;
+  date: string;
+  isRead: boolean;
+}
 
-// Import images
-import zaesImg from "./assets/ЗАЕС.png";
-import paesImg from "./assets/ПАЕС.png";
-import raesImg from "./assets/РАЕС.png";
-import haesImg from "./assets/ХАЕС.png";
+interface FeedSectionProps {
+  title: string;
+  items: FeedItem[];
+  onToggleReadStatus: (id: number) => void;
+  onDeleteItem: (id: number) => void;
+  primaryColor: string;
+  badgeVariant: string;
+  newItemText: string;
+}
 
-// Map plant names to images
-const plantImages: Record<string, string> = {
-  ЗАЕС: zaesImg,
-  ПАЕС: paesImg,
-  РАЕС: raesImg,
-  ХАЕС: haesImg,
-};
+// Types for app launcher items
+interface AppItem {
+  id: string;
+  title: string;
+  icon: string;
+  backgroundColor: string;
+  textColor: string;
+  route: string;
+}
+
+interface AppCardProps {
+  app: AppItem;
+  style: React.CSSProperties;
+  onMouseEnter: (e: React.MouseEvent<HTMLElement>) => void;
+  onMouseLeave: (e: React.MouseEvent<HTMLElement>) => void;
+}
+
+// Reusable FeedSection component
+function FeedSection({
+  title,
+  items,
+  onToggleReadStatus,
+  onDeleteItem,
+  primaryColor,
+  badgeVariant,
+  newItemText,
+}: FeedSectionProps) {
+  return (
+    <Card style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <Card.Header
+        className={`text-${primaryColor} bg-white border-bottom flex-shrink-0`}
+      >
+        <h6 className="mb-0">
+          {title}
+          {items.filter((item) => !item.isRead).length > 0 && (
+            <Badge bg={badgeVariant} className="ms-2">
+              {items.filter((item) => !item.isRead).length}
+            </Badge>
+          )}
+        </h6>
+      </Card.Header>
+      <Card.Body className="p-0 flex-grow-1" style={{ overflow: "hidden" }}>
+        <div style={{ height: "100%", overflowY: "auto" }}>
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className={`border-bottom ${
+                item.isRead ? "bg-light" : "bg-white"
+              }`}
+              style={{
+                borderLeft: item.isRead
+                  ? "none"
+                  : `4px solid ${
+                      primaryColor === "primary" ? "#0d6efd" : "#ffc107"
+                    }`,
+                padding: "10px",
+              }}
+            >
+              {/* Header with title and controls */}
+              <div className="d-flex justify-content-between align-items-start mb-1">
+                <div className="flex-grow-1 me-2">
+                  <h6
+                    className={`mb-1 ${
+                      item.isRead ? "text-muted" : "text-dark fw-bold"
+                    }`}
+                    style={{ fontSize: "13px", lineHeight: "1.3" }}
+                  >
+                    {item.title}
+                  </h6>
+                </div>
+                <div className="d-flex align-items-center flex-shrink-0">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => onToggleReadStatus(item.id)}
+                    className="p-0 border-0 me-1 text-decoration-none"
+                    style={{
+                      fontSize: "11px",
+                      lineHeight: "1",
+                      minWidth: "auto",
+                    }}
+                    title={
+                      item.isRead
+                        ? "Позначити як не прочитане"
+                        : "Позначити як прочитане"
+                    }
+                  >
+                    <span
+                      style={{
+                        textDecoration: item.isRead ? "line-through" : "none",
+                        opacity: item.isRead ? 0.5 : 1,
+                        filter: item.isRead ? "grayscale(100%)" : "none",
+                      }}
+                    >
+                      👁
+                    </span>
+                  </Button>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => onDeleteItem(item.id)}
+                    className="p-0 border-0 text-danger text-decoration-none"
+                    style={{
+                      fontSize: "11px",
+                      lineHeight: "1",
+                      minWidth: "auto",
+                    }}
+                    title={`Видалити ${
+                      primaryColor === "primary" ? "новину" : "повідомлення"
+                    }`}
+                  >
+                    🗑
+                  </Button>
+                </div>
+              </div>
+              {/* Preview text */}
+              <div
+                className={`mb-2 ${item.isRead ? "text-muted" : "text-dark"}`}
+                style={{ fontSize: "11px", lineHeight: "1.4" }}
+                dangerouslySetInnerHTML={{ __html: item.preview }}
+              />
+              {/* Footer with date and badge */}
+              <div className="d-flex justify-content-between align-items-center">
+                <small className="text-muted" style={{ fontSize: "10px" }}>
+                  {item.date}
+                </small>
+                {!item.isRead && (
+                  <Badge bg={badgeVariant} style={{ fontSize: "9px" }}>
+                    {newItemText}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card.Body>
+    </Card>
+  );
+}
+
+// Reusable AppCard component
+function AppCard({ app, style, onMouseEnter, onMouseLeave }: AppCardProps) {
+  return (
+    <Link to={app.route} className="text-decoration-none">
+      <Card
+        className="shadow-sm"
+        style={style}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
+        <Card.Body className="text-center p-3 d-flex flex-column justify-content-center">
+          <div className="mb-2">
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                backgroundColor: app.backgroundColor,
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto",
+                fontSize: "18px",
+              }}
+            >
+              {app.icon}
+            </div>
+          </div>
+          <Card.Title className={`h6 ${app.textColor} mb-1`}>
+            {app.title}
+          </Card.Title>
+        </Card.Body>
+      </Card>
+    </Link>
+  );
+}
+
+// Dummy news data
+const initialNewsItems: FeedItem[] = [
+  {
+    id: 1,
+    title: "Реалізовано перший етап ІАС КСАР",
+    preview:
+      "Розроблена загальна архітектура та база даних <b>ІАС КСАР</b>. Для пілотного енергоблока (<b>ПАЕС-1</b>) дані внесені в систему.",
+    date: "30.06.2025",
+    isRead: false,
+  },
+];
+
+// Dummy notifications data
+const initialNotifications: FeedItem[] = [
+  {
+    id: 1,
+    title: "Вашу роль змінено",
+    preview:
+      "Системний адміністратор змінив роль Вашого облікового запису на <b>Фахівець з актуалізації даних</b>.",
+    date: "22.06.2025",
+    isRead: true,
+  },
+  {
+    id: 2,
+    title: "Вам надано доступ до системи",
+    preview: "Системний адміністратор зареєстрував ваш обліковий запис.",
+    date: "22.06.2025",
+    isRead: true,
+  },
+];
+
+// App launcher data
+const appItems: AppItem[] = [
+  {
+    id: "navigator",
+    title: "Навігатор",
+    icon: "🧭",
+    backgroundColor: "#0d6efd",
+    textColor: "text-primary",
+    route: "/navigator",
+  },
+  {
+    id: "fuel-campaigns",
+    title: "Паливні кампанії",
+    icon: "⚡",
+    backgroundColor: "#198754",
+    textColor: "text-success",
+    route: "/fuel-campaigns",
+  },
+  {
+    id: "testing",
+    title: "Випробування ЗС",
+    icon: "🔬",
+    backgroundColor: "#dc3545",
+    textColor: "text-danger",
+    route: "/testing",
+  },
+  {
+    id: "accounting",
+    title: "Облік ЗС",
+    icon: "📊",
+    backgroundColor: "#fd7e14",
+    textColor: "text-warning",
+    route: "/accounting",
+  },
+  {
+    id: "documents",
+    title: "Документ",
+    icon: "📄",
+    backgroundColor: "#6f42c1",
+    textColor: "text-primary",
+    route: "/documents",
+  },
+  {
+    id: "materials",
+    title: "Матеріали",
+    icon: "🏗️",
+    backgroundColor: "#20c997",
+    textColor: "text-info",
+    route: "/materials",
+  },
+];
 
 export default function Index() {
-  const [loading, setLoading] = useState(true);
-  const [plantsUnits, setPlantsUnits] = useState<PlantUnits[]>([]);
-
-  // Retrieves data about plants & units
-  async function fetchPlantsUnitsData() {
-    const response = await fetch(`/api/plants_units`);
-    if (response.ok) {
-      const plantsUnits = await response.json();
-      setPlantsUnits(plantsUnits);
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    fetchPlantsUnitsData().catch(console.error);
-  }, []);
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("uk-UA");
+  const [newsItems, setNewsItems] = useState(initialNewsItems);
+  const [notifications, setNotifications] = useState(initialNotifications); // Common style for all app cards
+  const appCardStyle = {
+    transition: "transform 0.2s, box-shadow 0.2s",
+    cursor: "pointer",
+    backgroundColor: "#fafafa",
+    border: "2px solid #e9ecef",
+    height: "140px",
+    width: "140px",
   };
 
-  const formatPower = (power: number | null) => {
-    if (!power) return "";
-    return `${Math.round(power)} МВт`;
+  // Common hover handlers for all app cards
+  const handleCardMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.transform = "translateY(-3px)";
+    e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.15)";
   };
 
-  if (loading) {
-    return (
-      <Container
-        className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: "60vh" }}
-      >
-        <div className="text-center">
-          <Spinner animation="border" role="status" className="mb-3" />
-          <div>Завантаження...</div>
-        </div>
-      </Container>
-    );
-  }
+  const handleCardMouseLeave = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.transform = "translateY(0)";
+    e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+  };
 
-  if (!plantsUnits.length) {
-    return (
-      <Container
-        className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: "60vh" }}
-      >
-        <div className="text-center">
-          <p className="text-muted fs-4">Немає доступних АЕС</p>
-        </div>
-      </Container>
+  const toggleNewsReadStatus = (id: number) => {
+    setNewsItems((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, isRead: !item.isRead } : item
+      )
     );
-  }
+  };
 
+  const deleteNewsItem = (id: number) => {
+    setNewsItems((items) => items.filter((item) => item.id !== id));
+  };
+
+  const toggleNotificationReadStatus = (id: number) => {
+    setNotifications((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, isRead: !item.isRead } : item
+      )
+    );
+  };
+
+  const deleteNotification = (id: number) => {
+    setNotifications((items) => items.filter((item) => item.id !== id));
+  };
   return (
     <Container
       fluid
-      className="py-4"
-      style={{ minHeight: "calc(100vh - 60px)" }}
+      style={{
+        height: "calc(100vh - 60px)",
+        display: "flex",
+        flexDirection: "column",
+        padding: "20px",
+      }}
     >
-      <div className="d-flex align-items-center justify-content-center h-100">
-        <div style={{ width: "100%", maxWidth: "1000px" }}>
-          <Row xs={1} md={2} className="g-4 justify-content-center">
-            {plantsUnits.map((plant) => (
-              <Col key={plant.name_eng} style={{ maxWidth: "450px" }}>
-                <Card className="h-100">
-                  <Card.Img
-                    variant="top"
-                    src={plantImages[plant.sh_name] || ""}
-                    alt={`Фото ${plant.name}`}
-                    style={{
-                      height: "150px",
-                      objectFit: "contain",
-                      backgroundColor: "#f8f9fa",
-                      padding: "1rem",
-                    }}
-                  />
-                  <Card.Body className="d-flex flex-column align-items-center text-center">
-                    <Card.Title className="mb-3">{plant.name}</Card.Title>
-                    <div
-                      className="d-flex flex-wrap gap-2 justify-content-center"
-                      style={{ maxHeight: "350px", overflowY: "auto" }}
-                    >
-                      {plant.units.length > 0 ? (
-                        plant.units.map((unit) => (
-                          <Link
-                            key={unit.name_eng}
-                            to={`/unit/${unit.name_eng}`}
-                            className="text-decoration-none"
-                          >
-                            <div
-                              className="border rounded p-2 text-center hover-effect"
-                              style={{
-                                minWidth: "80px",
-                                minHeight: "80px",
-                                backgroundColor: "#cce5ff",
-                                borderColor: "#66b3ff",
-                                transition: "background-color 0.2s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#b3d9ff";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#cce5ff";
-                              }}
-                            >
-                              <div className="fw-bold fs-5 text-dark mb-1">
-                                {unit.num}
-                              </div>
-                              <div className="small text-muted lh-sm">
-                                <div>{unit.design}</div>
-                                <div>{formatPower(unit.power)}</div>
-                                <div>{formatDate(unit.start_date)}</div>
-                              </div>
-                            </div>
-                          </Link>
-                        ))
-                      ) : (
-                        <Badge bg="secondary">Немає доступних блоків</Badge>
-                      )}
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          gap: "20px",
+          height: "100%",
+        }}
+      >
+        {/* News - Left Side */}
+        <div
+          style={{
+            width: "16.666667%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <FeedSection
+            title="Новини"
+            items={newsItems}
+            onToggleReadStatus={toggleNewsReadStatus}
+            onDeleteItem={deleteNewsItem}
+            primaryColor="primary"
+            badgeVariant="primary"
+            newItemText="Нова"
+          />
+        </div>
+        {/* App Launcher - Center */}
+        <div
+          style={{
+            width: "66.666667%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ maxWidth: "600px", width: "100%" }}>
+            <div className="text-center mb-5">
+              <h1 className="mb-3">КСАР</h1>
+              <p className="text-muted fs-5">
+                Комплексна система аналізу результатів випробувань
+                зразків-свідків та ресурсу корпусів реакторів
+              </p>
+              <hr
+                style={{
+                  margin: "2rem 0",
+                  border: "none",
+                  height: "1px",
+                  background:
+                    "linear-gradient(to right, transparent, #dee2e6, transparent)",
+                }}
+              />
+            </div>{" "}
+            {/* App Launcher Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 140px)",
+                gridTemplateRows: "repeat(2, 140px)",
+                gap: "20px",
+                justifyContent: "center",
+                alignContent: "center",
+              }}
+            >
+              {appItems.map((app) => (
+                <AppCard
+                  key={app.id}
+                  app={app}
+                  style={appCardStyle}
+                  onMouseEnter={handleCardMouseEnter}
+                  onMouseLeave={handleCardMouseLeave}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Notifications - Right Side */}
+        <div
+          style={{
+            width: "16.666667%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <FeedSection
+            title="Повідомлення"
+            items={notifications}
+            onToggleReadStatus={toggleNotificationReadStatus}
+            onDeleteItem={deleteNotification}
+            primaryColor="warning"
+            badgeVariant="warning"
+            newItemText="Нове"
+          />
         </div>
       </div>
     </Container>

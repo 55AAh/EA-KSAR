@@ -2,8 +2,6 @@ import { useState } from "react";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -61,78 +59,78 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       setLoginError("Невідома помилка!");
     }
   }
-
   return (
     <Container
       fluid
       className="d-flex align-items-center justify-content-center min-vh-100"
     >
-      <Row className="w-100">
-        <Col xs={12} sm={8} md={6} lg={4} xl={3} className="mx-auto">
-          <div className="p-4 border rounded shadow-sm bg-white">
-            <h3 className="text-center mb-4">Вхід в КСАР</h3>
+      {" "}
+      <div
+        style={{
+          width: "320px",
+          maxWidth: "90vw",
+        }}
+      >
+        <div className="p-4 border rounded shadow-sm bg-white">
+          <h3 className="text-center mb-4">Вхід в КСАР</h3>
 
-            <Form noValidate validated={validated} onSubmit={handleSubmit}>
-              <div
-                style={{
-                  height: loginError ? "3.5rem" : "0",
-                  overflow: "hidden",
-                  transition: "height 0.2s ease",
-                }}
-              >
-                <div className="alert alert-danger p-2 m-0" role="alert">
-                  {loginError}
-                </div>
+          <Form noValidate validated={validated} onSubmit={handleSubmit}>
+            <div
+              style={{
+                height: loginError ? "3.5rem" : "0",
+                overflow: "hidden",
+                transition: "height 0.2s ease",
+              }}
+            >
+              <div className="alert alert-danger p-2 m-0" role="alert">
+                {loginError}
               </div>
-
-              <Form.Group className="mb-3" controlId="formBasicLogin">
-                <Form.Label>Логін</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Введіть логін"
-                  value={login}
-                  onChange={(e) => {
-                    setLogin(e.target.value);
-                    setLoginError(""); // Clear error when user types
-                  }}
-                  required
-                  isInvalid={validated && !login.trim()}
-                />
-                <Form.Control.Feedback type="invalid">
-                  Логін не може бути порожнім
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="mb-3" controlId="formBasicPassword">
-                <Form.Label>Пароль</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="Введіть пароль"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setLoginError(""); // Clear error when user types
-                  }}
-                  required
-                  isInvalid={validated && !password.trim()}
-                />
-                <Form.Control.Feedback type="invalid">
-                  Пароль не може бути порожнім
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Button
-                variant="primary"
-                type="submit"
-                className="w-100"
-                disabled={busy}
-              >
-                Увійти
-              </Button>
-            </Form>
-          </div>
-        </Col>
-      </Row>
+            </div>
+            <Form.Group className="mb-3" controlId="formBasicLogin">
+              <Form.Label>Логін</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Введіть логін"
+                value={login}
+                onChange={(e) => {
+                  setLogin(e.target.value);
+                  setLoginError(""); // Clear error when user types
+                }}
+                required
+                isInvalid={validated && !login.trim()}
+              />
+              <Form.Control.Feedback type="invalid">
+                Логін не може бути порожнім
+              </Form.Control.Feedback>
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="formBasicPassword">
+              <Form.Label>Пароль</Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Введіть пароль"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setLoginError(""); // Clear error when user types
+                }}
+                required
+                isInvalid={validated && !password.trim()}
+              />
+              <Form.Control.Feedback type="invalid">
+                Пароль не може бути порожнім
+              </Form.Control.Feedback>
+            </Form.Group>
+            <Button
+              variant="primary"
+              type="submit"
+              className="w-100"
+              disabled={busy}
+            >
+              Увійти
+            </Button>{" "}
+          </Form>
+        </div>
+      </div>
     </Container>
   );
 }

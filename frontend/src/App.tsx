@@ -1,6 +1,7 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import Index from "./Index";
+import UnitSelector from "./UnitSelector";
 import Navbar from "./Navbar";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import Unit from "./Unit";
@@ -18,8 +19,10 @@ export default function App() {
               </>
             }
           >
+            {" "}
             <Route index element={<Index />} />
-            <Route path="/unit/:name_eng" element={<Unit />} />
+            <Route path="/units" element={<UnitSelector />} />
+            <Route path="/units/:name_eng" element={<Unit />} />
             <Route path="*" element={<>404</>} />
           </Route>
         </Routes>
