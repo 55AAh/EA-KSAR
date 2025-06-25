@@ -33,7 +33,7 @@ def main(
 ):
     """
     KSAR - Комплексна система аналізу результатів випробувань зразків-свідків та ресурсу корпусів реакторів
-    
+
     By default, runs the FastAPI server. Use subcommands for other operations.
     """
     if ctx.invoked_subcommand is None:
@@ -50,9 +50,7 @@ def run_server(
     typer.echo("Starting KSAR server...")
 
     # Use provided values or fall back to config defaults
-    server_host = (
-        host if host is not None else ("127.0.0.1" if config.server_dev else "0.0.0.0")
-    )
+    server_host = host if host is not None else config.server_host
     server_port = port if port is not None else config.server_port
     server_reload = reload if reload is not None else config.server_dev
 

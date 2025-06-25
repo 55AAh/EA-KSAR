@@ -12,6 +12,7 @@ class Config(BaseSettings):
 
     # Server configuration
     server_dev: bool = False  # Development mode
+    server_host: str = "127.0.0.1"  # Host for the server to listen on
     server_port: int = 8000  # Port for the server to listen on
 
     # Database configuration
