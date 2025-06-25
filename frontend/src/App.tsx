@@ -4,7 +4,9 @@ import Index from "./Index";
 import UnitSelector from "./UnitSelector";
 import Navbar from "./Navbar";
 import Navigator from "./Navigator";
-import Search from "./Search";
+import SearchObjectTypeSelector from "./search/SearchObjectTypeSelector";
+import PlantSearch from "./search/PlantSearch";
+import UnitSearch from "./search/UnitSearch";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import Unit from "./Unit";
 
@@ -24,7 +26,12 @@ export default function App() {
             {" "}
             <Route index element={<Index />} />
             <Route path="/navigator" element={<Navigator />} />
-            <Route path="/navigator/search" element={<Search />} />
+            <Route
+              path="/navigator/search"
+              element={<SearchObjectTypeSelector />}
+            />
+            <Route path="/navigator/search/plants" element={<PlantSearch />} />
+            <Route path="/navigator/search/units" element={<UnitSearch />} />
             <Route path="/navigator/units" element={<UnitSelector />} />
             <Route path="/navigator/units/:name_eng" element={<Unit />} />
             <Route path="*" element={<>404</>} />

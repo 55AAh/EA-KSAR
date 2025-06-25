@@ -21,3 +21,19 @@ export interface Placement {
   sector_num: number;
   name: string;
 }
+
+export interface Plant {
+  plant_id: number;
+  name: string;
+  sh_name: string;
+  name_eng: string;
+  sh_name_eng: string;
+}
+
+export interface SearchResult {
+  id: number;
+  type: string;
+  name: string;
+  description: string;
+  data?: any; // Additional data for specific result types (Plant, Unit, etc.)
+}

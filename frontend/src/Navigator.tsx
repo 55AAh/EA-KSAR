@@ -156,7 +156,7 @@ export default function Navigator() {
                 </div>
                 <Card.Title className="h4 text-success mb-2">Пошук</Card.Title>
                 <Card.Text className="text-muted">
-                  Розширений пошук по всій системі
+                  Розширений пошук по всім об'єктам
                 </Card.Text>
               </Card.Body>
             </Card>

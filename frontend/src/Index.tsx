@@ -36,6 +36,7 @@ interface AppCardProps {
   style: React.CSSProperties;
   onMouseEnter: (e: React.MouseEvent<HTMLElement>) => void;
   onMouseLeave: (e: React.MouseEvent<HTMLElement>) => void;
+  isImplemented: boolean;
 }
 
 // Reusable FeedSection component
@@ -162,40 +163,66 @@ function FeedSection({
 }
 
 // Reusable AppCard component
-function AppCard({ app, style, onMouseEnter, onMouseLeave }: AppCardProps) {
-  return (
-    <Link to={app.route} className="text-decoration-none">
-      <Card
-        className="shadow-sm"
-        style={style}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-      >
-        <Card.Body className="text-center p-3 d-flex flex-column justify-content-center">
-          <div className="mb-2">
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                backgroundColor: app.backgroundColor,
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto",
-                fontSize: "18px",
-              }}
-            >
-              {app.icon}
-            </div>
+function AppCard({
+  app,
+  style,
+  onMouseEnter,
+  onMouseLeave,
+  isImplemented,
+}: AppCardProps) {
+  const cardContent = (
+    <Card
+      className={`shadow-sm ${!isImplemented ? "opacity-50" : ""}`}
+      style={{
+        ...style,
+        cursor: isImplemented ? "pointer" : "not-allowed",
+        filter: !isImplemented ? "grayscale(50%)" : "none",
+      }}
+      onMouseEnter={isImplemented ? onMouseEnter : undefined}
+      onMouseLeave={isImplemented ? onMouseLeave : undefined}
+    >
+      <Card.Body className="text-center p-3 d-flex flex-column justify-content-center">
+        <div className="mb-2">
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              backgroundColor: app.backgroundColor,
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto",
+              fontSize: "18px",
+            }}
+          >
+            {app.icon}
           </div>
-          <Card.Title className={`h6 ${app.textColor} mb-1`}>
-            {app.title}
-          </Card.Title>
-        </Card.Body>
-      </Card>
-    </Link>
+        </div>
+        <Card.Title className={`h6 ${app.textColor} mb-1`}>
+          {app.title}
+        </Card.Title>
+        {!isImplemented && (
+          <div className="mt-auto">
+            <span className="badge bg-secondary" style={{ fontSize: "10px" }}>
+              Незабаром
+            </span>
+          </div>
+        )}
+      </Card.Body>
+    </Card>
   );
+
+  // Only wrap with Link if implemented
+  if (isImplemented) {
+    return (
+      <Link to={app.route} className="text-decoration-none">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }
 
 // Dummy news data
@@ -284,6 +311,11 @@ const appItems: AppItem[] = [
 export default function Index() {
   const [newsItems, setNewsItems] = useState(initialNewsItems);
   const [notifications, setNotifications] = useState(initialNotifications);
+
+  // Check if an app is implemented
+  const isAppImplemented = (appId: string) => {
+    return appId === "navigator"; // Only navigator is implemented for now
+  };
 
   // Common style for all app cards
   const appCardStyle = {
@@ -402,6 +434,7 @@ export default function Index() {
                 alignContent: "center",
               }}
             >
+              {" "}
               {appItems.map((app) => (
                 <AppCard
                   key={app.id}
@@ -409,6 +442,7 @@ export default function Index() {
                   style={appCardStyle}
                   onMouseEnter={handleCardMouseEnter}
                   onMouseLeave={handleCardMouseLeave}
+                  isImplemented={isAppImplemented(app.id)}
                 />
               ))}
             </div>
