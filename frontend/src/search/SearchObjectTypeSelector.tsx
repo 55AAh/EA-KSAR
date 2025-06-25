@@ -45,15 +45,23 @@ const objectTypes = [
     icon: "🗃️",
     description: "Пошук контейнерних збірок зразків-свідків",
   },
+  {
+    value: "document",
+    label: "Документи",
+    icon: "📄",
+    description: "Пошук нормативних документів",
+  },
 ];
 
 export default function SearchObjectTypeSelector() {
   const navigate = useNavigate();
-
   const isImplemented = (objectType: string) => {
-    return objectType === "plant" || objectType === "unit";
+    return (
+      objectType === "plant" ||
+      objectType === "unit" ||
+      objectType === "document"
+    );
   };
-
   const handleObjectTypeSelect = (objectType: string) => {
     // Only navigate if the object type is implemented
     if (!isImplemented(objectType)) {
@@ -67,6 +75,9 @@ export default function SearchObjectTypeSelector() {
         break;
       case "unit":
         navigate("/navigator/search/units");
+        break;
+      case "document":
+        navigate("/documents");
         break;
       default:
         // For other types, do nothing for now

@@ -311,10 +311,9 @@ const appItems: AppItem[] = [
 export default function Index() {
   const [newsItems, setNewsItems] = useState(initialNewsItems);
   const [notifications, setNotifications] = useState(initialNotifications);
-
   // Check if an app is implemented
   const isAppImplemented = (appId: string) => {
-    return appId === "navigator"; // Only navigator is implemented for now
+    return appId === "navigator" || appId === "documents"; // Navigator and documents are implemented
   };
 
   // Common style for all app cards

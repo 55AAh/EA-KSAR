@@ -7,6 +7,9 @@ import Navigator from "./Navigator";
 import SearchObjectTypeSelector from "./search/SearchObjectTypeSelector";
 import PlantSearch from "./search/PlantSearch";
 import UnitSearch from "./search/UnitSearch";
+import DocumentsSearch from "./document/DocumentsSearch";
+import Document from "./document/Document";
+import DocumentUpload from "./document/DocumentUpload";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import Unit from "./Unit";
 
@@ -29,9 +32,12 @@ export default function App() {
             <Route
               path="/navigator/search"
               element={<SearchObjectTypeSelector />}
-            />
-            <Route path="/navigator/search/plants" element={<PlantSearch />} />
-            <Route path="/navigator/search/units" element={<UnitSearch />} />
+            />{" "}
+            <Route path="/navigator/search/plants" element={<PlantSearch />} />{" "}
+            <Route path="/navigator/search/units" element={<UnitSearch />} />{" "}
+            <Route path="/documents" element={<DocumentsSearch />} />
+            <Route path="/documents/upload" element={<DocumentUpload />} />
+            <Route path="/documents/:id" element={<Document />} />
             <Route path="/navigator/units" element={<UnitSelector />} />
             <Route path="/navigator/units/:name_eng" element={<Unit />} />
             <Route path="*" element={<>404</>} />

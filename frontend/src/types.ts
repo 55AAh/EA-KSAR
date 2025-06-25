@@ -37,3 +37,15 @@ export interface SearchResult {
   description: string;
   data?: any; // Additional data for specific result types (Plant, Unit, etc.)
 }
+
+export interface Document {
+  id: number;
+  name: string;
+  code: string;
+  issue_date: string;
+  valid_until: string | null;
+  filename: string;
+  file_size: number;
+  file_extension: string;
+  status: string;
+}

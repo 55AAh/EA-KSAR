@@ -6,6 +6,7 @@ from .coupon_complect import CouponComplectTable
 from .container_sys import ContainerSysTable
 from .coupon_load import CouponLoadTable
 from .coupon_extract import CouponExtractTable
+from .document import DocumentTable
 
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "ContainerSysTable",
     "CouponLoadTable",
     "CouponExtractTable",
+    "DocumentTable",
 ]
