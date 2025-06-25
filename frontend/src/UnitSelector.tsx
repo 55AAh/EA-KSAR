@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Container, Row, Col, Card, Spinner, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router";
+import { usePageTitle } from "./hooks/usePageTitle";
 
 import type { PlantUnits } from "./types";
 
@@ -19,6 +20,8 @@ const plantImages: Record<string, string> = {
 };
 
 export default function UnitSelector() {
+  usePageTitle(); // This will set "КСАР - Блоки АЕС"
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [plantsUnits, setPlantsUnits] = useState<PlantUnits[]>([]);

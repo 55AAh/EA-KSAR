@@ -2,8 +2,11 @@ import { Container, Card, Form, Button, Row, Col } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Plant } from "../types";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function PlantSearch() {
+  usePageTitle(); // This will set "КСАР - Пошук АЕС"
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchName, setSearchName] = useState("");

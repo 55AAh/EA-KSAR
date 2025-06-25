@@ -1,6 +1,7 @@
 import { Container, Card, Badge, Button } from "react-bootstrap";
 import { Link } from "react-router";
 import { useState } from "react";
+import { usePageTitle } from "./hooks/usePageTitle";
 
 // Types for feed items
 interface FeedItem {
@@ -309,6 +310,8 @@ const appItems: AppItem[] = [
 ];
 
 export default function Index() {
+  usePageTitle(); // This will set "КСАР - Головна"
+
   const [newsItems, setNewsItems] = useState(initialNewsItems);
   const [notifications, setNotifications] = useState(initialNotifications);
   // Check if an app is implemented

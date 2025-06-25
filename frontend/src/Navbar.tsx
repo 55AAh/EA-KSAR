@@ -68,7 +68,31 @@ export default function Navbar() {
           path: "/navigator/search",
           active: isLast,
         });
-      } else if (params.name_eng && isLast) {
+      } else if (segment === "plants" && pathnames[index - 1] === "search") {
+        breadcrumbs.push({
+          label: "Пошук АЕС",
+          path: "/navigator/search/plants",
+          active: isLast,
+        });
+      } else if (segment === "units" && pathnames[index - 1] === "search") {
+        breadcrumbs.push({
+          label: "Пошук енергоблоків",
+          path: "/navigator/search/units",
+          active: isLast,
+        });
+      } else if (segment === "documents") {
+        breadcrumbs.push({
+          label: "Документи",
+          path: "/documents",
+          active: isLast,
+        });
+      } else if (segment === "search" && pathnames[index - 1] === "documents") {
+        breadcrumbs.push({
+          label: "Пошук документів",
+          path: "/documents/search",
+          active: isLast,
+        });
+      } else if (params.name_eng && isLast && pathnames.includes("units")) {
         // For unit details page - use fetched unit name or fallback to name_eng
         const displayName = unitName || params.name_eng;
         breadcrumbs.push({

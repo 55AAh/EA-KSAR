@@ -1,5 +1,6 @@
 import { Container, Card, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 // Object types for search
 const objectTypes = [
@@ -54,6 +55,8 @@ const objectTypes = [
 ];
 
 export default function SearchObjectTypeSelector() {
+  usePageTitle(); // This will set "КСАР - Пошук об'єктів"
+
   const navigate = useNavigate();
   const isImplemented = (objectType: string) => {
     return (
@@ -185,28 +188,6 @@ export default function SearchObjectTypeSelector() {
               );
             })}
           </Row>
-          <div className="text-center mt-5">
-            <div
-              className="card border-0"
-              style={{ backgroundColor: "#f8f9fa" }}
-            >
-              <div className="card-body p-3">
-                {" "}
-                <h6 className="text-muted mb-2">Інструкції:</h6>
-                <ul
-                  className="text-muted mb-0"
-                  style={{ fontSize: "14px", listStyle: "none", padding: 0 }}
-                >
-                  <li>
-                    • Натисніть на картку з типом об'єкта для початку пошуку
-                  </li>
-                  <li>• Доступні для пошуку: АЕС та Енергоблоки</li>
-                  <li>• Інші типи об'єктів будуть додані незабаром</li>
-                  <li>• Пошук працює з базою даних у реальному часі</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </Container>

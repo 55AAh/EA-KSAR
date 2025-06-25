@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
+import { usePageTitle } from "./hooks/usePageTitle";
 
 import type { Placement, Unit } from "./types";
 import { Container, Spinner, Card, Button } from "react-bootstrap";
@@ -45,6 +46,12 @@ export default function Unit() {
   const [selectedPlacement, setSelectedPlacement] = useState<string | null>(
     null
   );
+
+  // Set dynamic page title based on unit name
+  const unitTitle = unitData?.unit?.name
+    ? `КСАР - ${unitData.unit.name}`
+    : "КСАР - Деталі енергоблоку";
+  usePageTitle(unitTitle);
 
   // Retrieves data about the unit
   async function fetchUnitData() {

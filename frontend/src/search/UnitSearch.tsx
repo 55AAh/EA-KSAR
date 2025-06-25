@@ -2,6 +2,7 @@ import { Container, Card, Form, Button, Row, Col } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Unit } from "../types";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 // Extended Unit interface to include plant information
 interface UnitWithPlant extends Unit {
@@ -12,6 +13,8 @@ interface UnitWithPlant extends Unit {
 }
 
 export default function UnitSearch() {
+  usePageTitle(); // This will set "КСАР - Пошук енергоблоків"
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchName, setSearchName] = useState("");

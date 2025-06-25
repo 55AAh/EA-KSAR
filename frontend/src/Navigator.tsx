@@ -1,7 +1,9 @@
 import { Container, Card } from "react-bootstrap";
 import { Link, useNavigate } from "react-router";
+import { usePageTitle } from "./hooks/usePageTitle";
 
 export default function Navigator() {
+  usePageTitle(); // This will set "КСАР - Навігатор"
   const navigate = useNavigate();
 
   // Common style for navigation cards
