@@ -64,7 +64,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       fluid
       className="d-flex align-items-center justify-content-center min-vh-100"
     >
-      {" "}
       <div
         style={{
           width: "320px",
@@ -72,7 +71,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         }}
       >
         <div className="p-4 border rounded shadow-sm bg-white">
-          <h3 className="text-center mb-4">Вхід в КСАР</h3>
+          <h3 className="text-center mb-4">Вхід в ІАС КСАР</h3>
 
           <Form noValidate validated={validated} onSubmit={handleSubmit}>
             <div
