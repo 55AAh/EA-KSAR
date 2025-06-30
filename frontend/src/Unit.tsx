@@ -13,7 +13,7 @@ interface UnitData {
     history: {
       type: "load" | "extract";
       container_sys_name: string;
-      date: Date;
+      date: string;
     }[];
   }[];
   placements_coords: [number, number][][];
@@ -25,13 +25,13 @@ interface UnitData {
         | {
             type: "load";
             load_id: number;
-            date: Date;
+            date: string;
             placement_name: string;
           }
         | {
             type: "extract";
             extract_id: number;
-            date: Date;
+            date: string;
           }
       )[];
     }[];
@@ -103,6 +103,13 @@ export default function Unit() {
     }
   }
 
+  // Helper function to display date strings as-is (no conversion)
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return "";
+    // Return the string as-is since it can be DD.MM.YYYY format or just year numbers
+    return dateString;
+  };
+
   // Called once on page load
   useEffect(() => {
     fetchUnitData().catch(console.error);
@@ -163,13 +170,13 @@ export default function Unit() {
 
     const history_periods: {
       container_sys_name: string;
-      load_date: Date;
-      extract_date: Date | undefined;
+      load_date: string;
+      extract_date: string | undefined;
     }[] = [];
     let last_load_event:
       | {
           container_sys_name: string;
-          load_date: Date;
+          load_date: string;
         }
       | undefined = undefined;
 
@@ -187,9 +194,13 @@ export default function Unit() {
         if (last_load_event === undefined) {
           throw new Error("Extract event from empty placement!");
         } else {
+          const loadEvent = last_load_event as {
+            container_sys_name: string;
+            load_date: string;
+          };
           history_periods.push({
-            container_sys_name: last_load_event.container_sys_name,
-            load_date: last_load_event.load_date,
+            container_sys_name: loadEvent.container_sys_name,
+            load_date: loadEvent.load_date,
             extract_date: event.date,
           });
           last_load_event = undefined;
@@ -197,10 +208,14 @@ export default function Unit() {
       }
     });
 
-    if (last_load_event !== undefined) {
+    if (last_load_event) {
+      const event = last_load_event as {
+        container_sys_name: string;
+        load_date: string;
+      };
       history_periods.push({
-        container_sys_name: last_load_event.container_sys_name,
-        load_date: last_load_event.load_date,
+        container_sys_name: event.container_sys_name,
+        load_date: event.load_date,
         extract_date: undefined,
       });
     }
@@ -223,8 +238,8 @@ export default function Unit() {
         load_id: number;
         container_sys_name: string;
         placement_name: string;
-        load_date: Date;
-        extract_date?: Date;
+        load_date: string;
+        extract_date?: string;
       }[] = [];
 
       complect.forEach((csh) => {
@@ -534,11 +549,9 @@ export default function Unit() {
 
                   if (!placementData) return null;
 
-                  // Sort history periods by load date
+                  // Sort history periods by load date (string comparison works for ISO dates)
                   const sortedPeriods = [...placementData.history_periods].sort(
-                    (a, b) =>
-                      new Date(a.load_date).getTime() -
-                      new Date(b.load_date).getTime()
+                    (a, b) => a.load_date.localeCompare(b.load_date)
                   );
                   return sortedPeriods.map((period, index) => (
                     <tr
@@ -567,7 +580,7 @@ export default function Unit() {
                           textAlign: "center",
                         }}
                       >
-                        {new Date(period.load_date).toLocaleDateString("uk-UA")}
+                        {formatDate(period.load_date)}
                       </td>
                       <td
                         style={{
@@ -578,9 +591,7 @@ export default function Unit() {
                         }}
                       >
                         {period.extract_date ? (
-                          new Date(period.extract_date).toLocaleDateString(
-                            "uk-UA"
-                          )
+                          formatDate(period.extract_date)
                         ) : (
                           <i>опромінюється</i>
                         )}
@@ -886,9 +897,7 @@ export default function Unit() {
                             minWidth: "90px",
                           }}
                         >
-                          {new Date(period_data.load_date).toLocaleDateString(
-                            "uk-UA"
-                          )}
+                          {formatDate(period_data.load_date)}
                         </td>
                         <td
                           style={{
@@ -911,9 +920,7 @@ export default function Unit() {
                           }}
                         >
                           {period_data.extract_date ? (
-                            new Date(
-                              period_data.extract_date
-                            ).toLocaleDateString("uk-UA")
+                            formatDate(period_data.extract_date)
                           ) : (
                             <i>опромінюється</i>
                           )}

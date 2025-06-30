@@ -280,17 +280,13 @@ def unit_detail(name_eng: str, db: DbSessionDep):
                         {
                             "type": "load",
                             "container_sys_name": event.irrad_container_sys.name,
-                            "date": event.load_date.isoformat()
-                            if event.load_date
-                            else None,
+                            "date": event.load_date if event.load_date else None,
                         }
                         if isinstance(event, CouponLoadTable)
                         else {
                             "type": "extract",
                             "container_sys_name": event.irrad_container_sys.name,
-                            "date": event.extract_date.isoformat()
-                            if event.extract_date
-                            else None,
+                            "date": event.extract_date if event.extract_date else None,
                         }
                     )
                     for event in ph.history
@@ -314,16 +310,14 @@ def unit_detail(name_eng: str, db: DbSessionDep):
                             {
                                 "type": "load",
                                 "load_id": event.cpn_load_id,
-                                "date": event.load_date.isoformat()
-                                if event.load_date
-                                else None,
+                                "date": event.load_date if event.load_date else None,
                                 "placement_name": event.irrad_placement.name,
                             }
                             if isinstance(event, CouponLoadTable)
                             else {
                                 "type": "extract",
                                 "extract_id": event.cpn_extract_id,
-                                "date": event.extract_date.isoformat()
+                                "date": event.extract_date
                                 if event.extract_date
                                 else None,
                             }
@@ -460,16 +454,14 @@ def export_unit_data(name_eng: str, db: DbSessionDep):
                 }
             )
 
-        # Sort by load date
-        history_periods.sort(key=lambda x: datetime.fromisoformat(x["load_date"]))
+        # Sort by load date (assuming string dates in sortable format like YYYY-MM-DD)
+        history_periods.sort(key=lambda x: x["load_date"] if x["load_date"] else "")
 
         # Add rows to sheet
         for period in history_periods:
-            load_date = datetime.fromisoformat(period["load_date"]).strftime("%d.%m.%Y")
+            load_date = period["load_date"] if period["load_date"] else ""
             extract_date = (
-                datetime.fromisoformat(period["extract_date"]).strftime("%d.%m.%Y")
-                if period["extract_date"]
-                else "опромінюється"
+                period["extract_date"] if period["extract_date"] else "опромінюється"
             )
 
             ws_placements.append(
@@ -519,15 +511,9 @@ def export_unit_data(name_eng: str, db: DbSessionDep):
                         else None
                     )
 
-                    load_date = datetime.fromisoformat(load_event["date"]).strftime(
-                        "%d.%m.%Y"
-                    )
+                    load_date = load_event["date"] if load_event["date"] else ""
                     extract_date = (
-                        datetime.fromisoformat(extract_event["date"]).strftime(
-                            "%d.%m.%Y"
-                        )
-                        if extract_event
-                        else "опромінюється"
+                        extract_event["date"] if extract_event else "опромінюється"
                     )
 
                     all_periods.append(

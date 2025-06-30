@@ -17,7 +17,7 @@ class CouponComplectTable(BaseTable):
         ForeignKey("T_NPP_UNITS.unit_id"), nullable=False, comment="ID блоку"
     )
     name: Mapped[str] = mapped_column(
-        String(2), nullable=False, comment="Позначення комплекту"
+        String(3), nullable=False, comment="Позначення комплекту"
     )
 
     # Relationships

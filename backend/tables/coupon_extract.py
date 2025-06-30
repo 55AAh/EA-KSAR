@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from sqlalchemy import Integer, Identity, ForeignKey, Date
+from sqlalchemy import Integer, Identity, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.tables.base import BaseTable
@@ -15,8 +13,8 @@ class CouponExtractTable(BaseTable):
     cpn_extract_id: Mapped[int] = mapped_column(
         Integer, Identity(), primary_key=True, comment="ID вивантаження ЗС"
     )
-    extract_date: Mapped[datetime | None] = mapped_column(
-        Date, nullable=True, comment="Дата вивантаження"
+    extract_date: Mapped[str | None] = mapped_column(
+        String(15), nullable=True, comment="Дата вивантаження"
     )
     irrad_container_sys_id: Mapped[int] = mapped_column(
         ForeignKey("T_CPN_CONTAINER_SYS.container_sys_id"),
