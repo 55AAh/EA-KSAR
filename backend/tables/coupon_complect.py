@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, Identity, ForeignKey
+from sqlalchemy import Boolean, String, Integer, Identity, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.tables.base import BaseTable
@@ -18,6 +18,12 @@ class CouponComplectTable(BaseTable):
     )
     name: Mapped[str] = mapped_column(
         String(3), nullable=False, comment="Позначення комплекту"
+    )
+    is_additional: Mapped[bool] = mapped_column(
+        Boolean(create_constraint=True),
+        default=True,
+        server_default="0",
+        comment="Чи є додатковим",
     )
 
     # Relationships

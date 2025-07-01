@@ -188,7 +188,7 @@ def unit_detail(name_eng: str, db: DbSessionDep):
         db.query(CouponComplectTable)
         .filter(CouponComplectTable.unit_id == unit.unit_id)
         .options(joinedload(CouponComplectTable.container_systems))
-        .order_by(CouponComplectTable.name)
+        .order_by(CouponComplectTable.is_additional.asc(), CouponComplectTable.name)
         .all()
     )
 
@@ -203,9 +203,10 @@ def unit_detail(name_eng: str, db: DbSessionDep):
             csh = ContainerSysWithHistory(container_sys)
             complect_systems.append(csh)
             container_sys_history[container_sys.container_sys_id] = csh
-        complects[complect.name] = (
-            complect_systems  # Fetch all loads for this unit with related data
-        )
+        complects[complect.name] = {
+            "systems": complect_systems,
+            "is_additional": complect.is_additional,
+        }
     loads = (
         db.query(CouponLoadTable)
         .join(
@@ -302,32 +303,37 @@ def unit_detail(name_eng: str, db: DbSessionDep):
         "placements_coords": placements_coords,
         "placements_text_coords": placement_text_coords,
         "complects": {
-            complect_name: [
-                {
-                    "container_sys_name": csh.container_sys.name,
-                    "history": [
-                        (
-                            {
-                                "type": "load",
-                                "load_id": event.cpn_load_id,
-                                "date": event.load_date if event.load_date else None,
-                                "placement_name": event.irrad_placement.name,
-                            }
-                            if isinstance(event, CouponLoadTable)
-                            else {
-                                "type": "extract",
-                                "extract_id": event.cpn_extract_id,
-                                "date": event.extract_date
-                                if event.extract_date
-                                else None,
-                            }
-                        )
-                        for event in csh.history
-                    ],
-                }
-                for csh in complect
-            ]
-            for complect_name, complect in complects.items()
+            complect_name: {
+                "is_additional": complect_data["is_additional"],
+                "systems": [
+                    {
+                        "container_sys_name": csh.container_sys.name,
+                        "history": [
+                            (
+                                {
+                                    "type": "load",
+                                    "load_id": event.cpn_load_id,
+                                    "date": event.load_date
+                                    if event.load_date
+                                    else None,
+                                    "placement_name": event.irrad_placement.name,
+                                }
+                                if isinstance(event, CouponLoadTable)
+                                else {
+                                    "type": "extract",
+                                    "extract_id": event.cpn_extract_id,
+                                    "date": event.extract_date
+                                    if event.extract_date
+                                    else None,
+                                }
+                            )
+                            for event in csh.history
+                        ],
+                    }
+                    for csh in complect_data["systems"]
+                ],
+            }
+            for complect_name, complect_data in complects.items()
         },
     }
 
@@ -496,7 +502,7 @@ def export_unit_data(name_eng: str, db: DbSessionDep):
         # Collect all periods from all container systems in this complect
         all_periods = []
 
-        for container_sys in complect_data:
+        for container_sys in complect_data["systems"]:
             container_sys_name = container_sys["container_sys_name"]
             history = container_sys["history"]
 

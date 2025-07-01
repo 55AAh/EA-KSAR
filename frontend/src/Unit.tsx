@@ -20,22 +20,199 @@ interface UnitData {
   placements_text_coords: [number, number][][];
   complects: {
     [key: string]: {
-      container_sys_name: string;
-      history: (
-        | {
-            type: "load";
-            load_id: number;
-            date: string;
-            placement_name: string;
-          }
-        | {
-            type: "extract";
-            extract_id: number;
-            date: string;
-          }
-      )[];
-    }[];
+      is_additional: boolean;
+      systems: {
+        container_sys_name: string;
+        history: (
+          | {
+              type: "load";
+              load_id: number;
+              date: string;
+              placement_name: string;
+            }
+          | {
+              type: "extract";
+              extract_id: number;
+              date: string;
+            }
+        )[];
+      }[];
+    };
   };
+}
+
+// ComplectCard component for consistent styling
+interface ComplectCardProps {
+  complectName: string;
+  periodsData: {
+    load_id: number;
+    container_sys_name: string;
+    placement_name: string;
+    load_date: string;
+    extract_date?: string;
+  }[];
+  selectedPlacement: string | null;
+  onPlacementClick: (placementName: string) => void;
+  formatDate: (dateString: string | undefined) => string;
+}
+
+function ComplectCard({
+  complectName,
+  periodsData,
+  selectedPlacement,
+  onPlacementClick,
+  formatDate,
+}: ComplectCardProps) {
+  return (
+    <Card
+      className="mb-2"
+      style={{
+        fontSize: "13px",
+        minWidth: "350px", // Minimum card width to ensure table fits
+      }}
+    >
+      <Card.Header style={{ backgroundColor: "#e8f5e8", padding: "8px 12px" }}>
+        <Card.Title className="mb-0" style={{ fontSize: "14px" }}>
+          Комплект <strong>{complectName}</strong>
+        </Card.Title>
+      </Card.Header>
+      <Card.Body style={{ padding: "8px" }}>
+        <div style={{ overflowX: "auto", minWidth: "320px" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "12px",
+              minWidth: "320px", // Ensure table has minimum width for all columns
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "5px",
+                    textAlign: "center",
+                    backgroundColor: "#e3f2fd",
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                    minWidth: "60px", // Minimum width for assembly column
+                  }}
+                >
+                  Збірка
+                </th>
+                <th
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "5px",
+                    textAlign: "center",
+                    backgroundColor: "#e3f2fd",
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                    minWidth: "90px", // Minimum width for date column
+                  }}
+                >
+                  Завантажено
+                </th>
+                <th
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "5px",
+                    textAlign: "center",
+                    backgroundColor: "#e3f2fd",
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                    minWidth: "60px", // Minimum width for place column
+                  }}
+                >
+                  Місце
+                </th>
+                <th
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "5px",
+                    textAlign: "center",
+                    backgroundColor: "#e3f2fd",
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                    minWidth: "90px", // Minimum width for unload date column
+                  }}
+                >
+                  Вивантажено
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {periodsData.map((period_data) => (
+                <tr
+                  key={period_data.load_id}
+                  style={{
+                    backgroundColor:
+                      selectedPlacement === period_data.placement_name
+                        ? "#ffa50080"
+                        : period_data.extract_date
+                        ? "transparent"
+                        : "#ffe6e6",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => onPlacementClick(period_data.placement_name)}
+                >
+                  <td
+                    style={{
+                      border: "1px solid #ddd",
+                      textAlign: "center",
+                      padding: "4px",
+                      fontSize: "11px",
+                      minWidth: "60px",
+                    }}
+                  >
+                    {period_data.container_sys_name}
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #ddd",
+                      textAlign: "center",
+                      padding: "4px",
+                      fontSize: "11px",
+                      minWidth: "90px",
+                    }}
+                  >
+                    {formatDate(period_data.load_date)}
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #ddd",
+                      textAlign: "center",
+                      padding: "4px",
+                      fontSize: "11px",
+                      minWidth: "60px",
+                    }}
+                  >
+                    <strong>{period_data.placement_name}</strong>
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #ddd",
+                      textAlign: "center",
+                      padding: "4px",
+                      fontSize: "11px",
+                      minWidth: "90px",
+                    }}
+                  >
+                    {period_data.extract_date ? (
+                      formatDate(period_data.extract_date)
+                    ) : (
+                      <i>опромінюється</i>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card.Body>
+    </Card>
+  );
 }
 
 export default function Unit() {
@@ -242,7 +419,7 @@ export default function Unit() {
         extract_date?: string;
       }[] = [];
 
-      complect.forEach((csh) => {
+      complect.systems.forEach((csh) => {
         let history = csh.history;
         while (history.length > 0) {
           const period = history.slice(0, 2);
@@ -287,6 +464,15 @@ export default function Unit() {
       return [complect_name, periods_data];
     })
   );
+
+  // Split complects into regular and additional, sorting each group by name
+  const regularComplects = Object.entries(complects_data)
+    .filter(([name]) => !complects[name].is_additional)
+    .sort(([nameA], [nameB]) => nameA.localeCompare(nameB));
+
+  const additionalComplects = Object.entries(complects_data)
+    .filter(([name]) => complects[name].is_additional)
+    .sort(([nameA], [nameB]) => nameA.localeCompare(nameB));
   return (
     <div
       style={{
@@ -296,7 +482,6 @@ export default function Unit() {
         minWidth: "1200px", // Ensure minimum total layout width
       }}
     >
-      {" "}
       {/* Left section - 1/4 space */}
       <div
         style={{
@@ -306,7 +491,6 @@ export default function Unit() {
           borderRight: "1px solid #ccc",
         }}
       >
-        {" "}
         {/* Back link */}
         <div
           onClick={() => navigate("/navigator/units")}
@@ -331,7 +515,7 @@ export default function Unit() {
           }}
         >
           ← Назад до списку блоків
-        </div>{" "}
+        </div>
         <h3
           style={{
             marginBottom: "20px",
@@ -341,7 +525,7 @@ export default function Unit() {
           }}
         >
           Інформація про блок
-        </h3>{" "}
+        </h3>
         <Card className="shadow-sm" style={{ border: "2px solid #dee2e6" }}>
           <Card.Body className="p-0">
             <div className="table-responsive">
@@ -774,164 +958,59 @@ export default function Unit() {
         >
           Комплекти ЗС
         </h3>
-        {Object.entries(complects_data).map(([complect_name, periods_data]) => (
-          <Card
+        {/* Regular complects (is_additional = false) */}
+        {regularComplects.map(([complect_name, periods_data]) => (
+          <ComplectCard
             key={complect_name}
-            className="mb-2"
+            complectName={complect_name}
+            periodsData={periods_data}
+            selectedPlacement={selectedPlacement}
+            onPlacementClick={(placementName) =>
+              setSelectedPlacement(
+                selectedPlacement === placementName ? null : placementName
+              )
+            }
+            formatDate={formatDate}
+          />
+        ))}
+
+        {/* Separator for additional complects */}
+        {additionalComplects.length > 0 && (
+          <div
             style={{
-              fontSize: "13px",
-              minWidth: "350px", // Minimum card width to ensure table fits
+              margin: "15px 0 10px 0",
+              display: "flex",
+              alignItems: "center",
+              fontSize: "12px",
+              color: "#666",
             }}
           >
-            <Card.Header
-              style={{ backgroundColor: "#e8f5e8", padding: "8px 12px" }}
-            >
-              <Card.Title className="mb-0" style={{ fontSize: "14px" }}>
-                Комплект <strong>{complect_name}</strong>
-              </Card.Title>
-            </Card.Header>
-            <Card.Body style={{ padding: "8px" }}>
-              <div style={{ overflowX: "auto", minWidth: "320px" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: "12px",
-                    minWidth: "320px", // Ensure table has minimum width for all columns
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "5px",
-                          textAlign: "center",
-                          backgroundColor: "#e3f2fd",
-                          fontSize: "11px",
-                          fontWeight: "bold",
-                          minWidth: "60px", // Minimum width for assembly column
-                        }}
-                      >
-                        Збірка
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "5px",
-                          textAlign: "center",
-                          backgroundColor: "#e3f2fd",
-                          fontSize: "11px",
-                          fontWeight: "bold",
-                          minWidth: "90px", // Minimum width for date column
-                        }}
-                      >
-                        Завантажено
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "5px",
-                          textAlign: "center",
-                          backgroundColor: "#e3f2fd",
-                          fontSize: "11px",
-                          fontWeight: "bold",
-                          minWidth: "60px", // Minimum width for place column
-                        }}
-                      >
-                        Місце
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "5px",
-                          textAlign: "center",
-                          backgroundColor: "#e3f2fd",
-                          fontSize: "11px",
-                          fontWeight: "bold",
-                          minWidth: "90px", // Minimum width for unload date column
-                        }}
-                      >
-                        Вивантажено
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {periods_data.map((period_data) => (
-                      <tr
-                        key={period_data.load_id}
-                        style={{
-                          backgroundColor:
-                            selectedPlacement === period_data.placement_name
-                              ? "#ffa50080"
-                              : period_data.extract_date
-                              ? "transparent"
-                              : "#ffe6e6",
-                          cursor: "pointer",
-                        }}
-                        onClick={() =>
-                          setSelectedPlacement(
-                            selectedPlacement === period_data.placement_name
-                              ? null
-                              : period_data.placement_name
-                          )
-                        }
-                      >
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            textAlign: "center",
-                            padding: "4px",
-                            fontSize: "11px",
-                            minWidth: "60px",
-                          }}
-                        >
-                          {period_data.container_sys_name}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            textAlign: "center",
-                            padding: "4px",
-                            fontSize: "11px",
-                            minWidth: "90px",
-                          }}
-                        >
-                          {formatDate(period_data.load_date)}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            textAlign: "center",
-                            padding: "4px",
-                            fontSize: "11px",
-                            minWidth: "60px",
-                          }}
-                        >
-                          <strong>{period_data.placement_name}</strong>
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            textAlign: "center",
-                            padding: "4px",
-                            fontSize: "11px",
-                            minWidth: "90px",
-                          }}
-                        >
-                          {period_data.extract_date ? (
-                            formatDate(period_data.extract_date)
-                          ) : (
-                            <i>опромінюється</i>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card.Body>
-          </Card>
+            <div
+              style={{ flex: 1, height: "1px", backgroundColor: "#ddd" }}
+            ></div>
+            <span style={{ padding: "0 10px", backgroundColor: "white" }}>
+              Додаткові
+            </span>
+            <div
+              style={{ flex: 1, height: "1px", backgroundColor: "#ddd" }}
+            ></div>
+          </div>
+        )}
+
+        {/* Additional complects (is_additional = true) */}
+        {additionalComplects.map(([complect_name, periods_data]) => (
+          <ComplectCard
+            key={complect_name}
+            complectName={complect_name}
+            periodsData={periods_data}
+            selectedPlacement={selectedPlacement}
+            onPlacementClick={(placementName) =>
+              setSelectedPlacement(
+                selectedPlacement === placementName ? null : placementName
+              )
+            }
+            formatDate={formatDate}
+          />
         ))}
       </div>
     </div>
