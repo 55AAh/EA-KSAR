@@ -27,6 +27,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ChangePasswordRequest(BaseModel):
+    new_password: str
+
+
 class Auth:
     """Authentication service class that handles user authentication, session management, and JWT operations."""
 
@@ -131,7 +135,7 @@ class Auth:
 
     def validate_token_and_get_user(
         self, request: Request, db: DbSessionDep
-    ) -> str | None:
+    ) -> UserTable | None:
         """
         Validate the access token from cookies and return the username.
         Returns None if authentication fails.
@@ -152,25 +156,27 @@ class Auth:
             )
 
             session_id = payload.get("session_id")
-            username = payload.get("username")
 
-            if not session_id or not username:
-                logger.debug("Invalid token payload - missing session_id or username")
+            if not session_id:
+                logger.debug("Invalid token payload - missing session_id")
                 return None
 
-            # Verify that the session still exists in the database and is not expired
-            stmt = select(UserSessionTable).where(
-                UserSessionTable.session_id == session_id,
-                UserSessionTable.expire_date > datetime.now(),
+            # Check that the session is valid and join with user table to get the user
+            stmt = (
+                select(UserTable)
+                .join(UserSessionTable, UserSessionTable.user_id == UserTable.user_id)
+                .where(
+                    UserSessionTable.session_id == session_id,
+                    UserSessionTable.expire_date > datetime.now(),
+                )
             )
             result = db.execute(stmt)
-            session = result.scalar_one_or_none()
-
-            if not session:
-                logger.debug(f"Session expired or invalid for session_id: {session_id}")
+            user = result.scalar_one_or_none()
+            if not user:
+                logger.debug(f"Valid user not found for session_id='{session_id}'")
                 return None
 
-            return username
+            return user
 
         except jwt.ExpiredSignatureError:
             logger.debug("JWT token has expired")
@@ -244,25 +250,56 @@ class Auth:
             samesite="strict",
         )
 
+    def change_password(
+        self, user: UserTable, new_password: str, db: DbSessionDep
+    ) -> None:
+        """
+        Change the user's password.
+        """
+        # Hash new password and update
+        new_password_hash = self.pwd_context.hash(new_password)
+        user.password_hash = new_password_hash
+        db.commit()
+
+        logger.debug(f"Password changed successfully for user: {user.username}")
+
+    def invalidate_all_user_sessions(self, user: UserTable, db: DbSessionDep) -> int:
+        """
+        Invalidate all sessions for a user (including current one).
+        Returns the number of sessions that were invalidated.
+        """
+        # Delete all sessions for this user
+        stmt = delete(UserSessionTable).where(UserSessionTable.user_id == user.user_id)
+        result = db.execute(stmt)
+        deleted_count = result.rowcount
+        db.commit()
+
+        if deleted_count > 0:
+            logger.debug(
+                f"Invalidated all {deleted_count} sessions for user {user.username}"
+            )
+
+        return deleted_count
+
 
 # Create a global instance of the Auth class
 auth_service = Auth()
 
 
 # Create a dependency for easier use in route parameters
-def get_current_user(request: Request, db: DbSessionDep) -> str:
+def get_current_user(request: Request, db: DbSessionDep) -> UserTable:
     """Dependency to get the current authenticated user."""
-    username = auth_service.validate_token_and_get_user(request, db)
-    if username is None:
+    user = auth_service.validate_token_and_get_user(request, db)
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return username
+    return user
 
 
-CurrentUser = Annotated[str, Depends(get_current_user)]
+CurrentUser = Annotated[UserTable, Depends(get_current_user)]
 
 
 @auth_router.post("/login", operation_id="login")
@@ -298,8 +335,43 @@ async def get_me(current_user: CurrentUser):
     """
     Get the current user information.
     """
-    logger.debug(f"Fetching current user info for: {current_user}")
-    return {"username": current_user}
+    return {
+        "username": current_user.username,
+        "full_name": current_user.full_name,
+        "email": current_user.email,
+        "enabled": current_user.enabled,
+    }
+
+
+@auth_router.post("/change-password", operation_id="change_password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: CurrentUser,
+    db: DbSessionDep,
+    response: Response,
+):
+    """
+    Change the current user's password and invalidate all user sessions (including current one).
+    User will be forced to re-login.
+    """
+
+    # Change the password
+    auth_service.change_password(current_user, request.new_password, db)
+
+    # Invalidate ALL sessions for this user (including current one)
+    invalidated_count = auth_service.invalidate_all_user_sessions(current_user, db)
+
+    # Clear the authentication cookie to force re-login
+    auth_service.clear_auth_cookie(response)
+
+    logger.debug(
+        f"Password changed for user {current_user}, invalidated {invalidated_count} sessions (including current)"
+    )
+
+    return {
+        "result": "ok",
+        "message": "Пароль успішно змінено. Будь ласка, увійдіть знову.",
+    }
 
 
 @auth_router.post("/logout", operation_id="logout")

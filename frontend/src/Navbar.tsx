@@ -142,6 +142,10 @@ export default function Navbar() {
           )}
         </div>
         <NavDropdown title={user.username} align="end">
+          <NavDropdown.Item as={Link} to="/change-password">
+            Змінити пароль
+          </NavDropdown.Item>
+          <NavDropdown.Divider />
           <NavDropdown.Item onClick={logout} className="text-danger">
             Вийти з системи
           </NavDropdown.Item>

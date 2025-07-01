@@ -10,6 +10,7 @@ import UnitSearch from "./search/UnitSearch";
 import DocumentsSearch from "./document/DocumentsSearch";
 import Document from "./document/Document";
 import DocumentUpload from "./document/DocumentUpload";
+import ChangePassword from "./ChangePassword";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import Unit from "./Unit";
 
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/documents/:id" element={<Document />} />
             <Route path="/navigator/units" element={<UnitSelector />} />
             <Route path="/navigator/units/:name_eng" element={<Unit />} />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="*" element={<>404</>} />
           </Route>
         </Routes>
