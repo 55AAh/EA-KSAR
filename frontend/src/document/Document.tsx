@@ -76,7 +76,8 @@ const Document = () => {
       const url = window.URL.createObjectURL(blob);
       const link = window.document.createElement("a");
       link.href = url;
-      link.download = `${document.name}.${document.file_extension}`;
+      // Use the original filename from the document
+      link.download = document.filename;
       window.document.body.appendChild(link);
       link.click();
       window.URL.revokeObjectURL(url);
@@ -144,7 +145,6 @@ const Document = () => {
 
   return (
     <Container fluid className="py-4">
-      {" "}
       {/* Header with navigation */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div className="d-flex align-items-center">
@@ -159,7 +159,6 @@ const Document = () => {
           <h1 className="mb-0">📄 Документ</h1>
         </div>
         <div>
-          {" "}
           <Button
             variant="outline-primary"
             size="sm"
@@ -172,7 +171,7 @@ const Document = () => {
             🗑️ Видалити
           </Button>
         </div>
-      </div>{" "}
+      </div>
       <Row className="h-100" style={{ minHeight: "calc(100vh - 200px)" }}>
         {/* Left Column - Document Information */}
         <Col md={4} className="pe-3">
@@ -264,7 +263,7 @@ const Document = () => {
               </div>
             </Card.Body>
           </Card>
-        </Col>{" "}
+        </Col>
         {/* Right Column - Document Preview */}
         <Col md={8} className="ps-3">
           <Card className="h-100">

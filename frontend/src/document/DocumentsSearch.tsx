@@ -327,7 +327,6 @@ const DocumentsSearch = () => {
                   className="p-3"
                   style={{ height: "100%", overflowY: "auto" }}
                 >
-                  {" "}
                   {filteredDocuments.map((document) => (
                     <Card
                       key={document.id}
@@ -341,11 +340,14 @@ const DocumentsSearch = () => {
                             <h6 className="card-title mb-2 text-primary">
                               {document.name}
                             </h6>
+                            <div className="text-muted small mb-2">
+                              <strong>Файл:</strong> {document.filename}
+                            </div>
                             <Row className="text-muted small mb-2">
                               <Col md={6}>
                                 <div className="mb-1">
                                   <strong>№ (шифр):</strong> {document.code}
-                                </div>{" "}
+                                </div>
                                 <div>
                                   <strong>Введений в дію:</strong>{" "}
                                   {document.issue_date
@@ -385,16 +387,12 @@ const DocumentsSearch = () => {
                             </div>
                           </div>
                           <div className="ms-3 d-flex flex-column align-items-end">
-                            {" "}
                             <Button
                               variant="outline-primary"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation(); // Prevent card click
-                                handleDownload(
-                                  document.id,
-                                  `${document.name}.${document.file_extension}`
-                                );
+                                handleDownload(document.id, document.filename);
                               }}
                               className="mb-2"
                             >
