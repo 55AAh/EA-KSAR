@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import Integer, Identity, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.tables.base import BaseTable
+
+
+if TYPE_CHECKING:
+    from .container_sys import ContainerSysTable
 
 
 class CouponExtractTable(BaseTable):
@@ -18,13 +23,12 @@ class CouponExtractTable(BaseTable):
     )
     irrad_container_sys_id: Mapped[int] = mapped_column(
         ForeignKey("T_CPN_CONTAINER_SYS.container_sys_id"),
-        nullable=False,
         comment="ID опромінюваної КЗ",
     )
 
     # Relationships
-    irrad_container_sys = relationship(
-        "ContainerSysTable", back_populates="coupon_extracts"
+    irrad_container_sys: Mapped["ContainerSysTable"] = relationship(
+        back_populates="coupon_extracts"
     )
 
     def __repr__(self):

@@ -62,7 +62,8 @@ export default function SearchObjectTypeSelector() {
     return (
       objectType === "plant" ||
       objectType === "unit" ||
-      objectType === "document"
+      objectType === "document" ||
+      objectType === "placement"
     );
   };
   const handleObjectTypeSelect = (objectType: string) => {
@@ -81,6 +82,9 @@ export default function SearchObjectTypeSelector() {
         break;
       case "document":
         navigate("/documents");
+        break;
+      case "placement":
+        navigate("/navigator/search/placements");
         break;
       default:
         // For other types, do nothing for now

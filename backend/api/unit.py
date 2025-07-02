@@ -23,8 +23,6 @@ unit_router = APIRouter()
 class PlacementWithHistory:
     """
     Helper class to track the history of loads and extracts for a placement.
-
-    This replicates the functionality of the Django PlacementWithHistory class.
     """
 
     def __init__(self, placement: PlacementTable):
@@ -43,8 +41,6 @@ class PlacementWithHistory:
 class ContainerSysWithHistory:
     """
     Helper class to track the history of loads and extracts for a container system.
-
-    This replicates the functionality of the Django ContainerSysWithHistory class.
     """
 
     def __init__(self, container_sys: ContainerSysTable):
@@ -156,8 +152,6 @@ placement_text_coords = {
 def unit_detail(name_eng: str, db: DbSessionDep):
     """
     Get specific unit by name_eng with complete placement and complects data.
-
-    This replicates the Django unit_detail view functionality.
     """
 
     # Get unit by name_eng

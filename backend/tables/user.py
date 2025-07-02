@@ -30,6 +30,9 @@ class UserTable(BaseTable):
         String(255), nullable=True, comment="Хеш пароля"
     )
 
+    # Relationships
+    sessions: Mapped[list["UserSessionTable"]] = relationship(back_populates="user")
+
     def __repr__(self):
         return f"{self.username} ({self.full_name}, {self.email})"
 
@@ -49,6 +52,9 @@ class UserSessionTable(BaseTable):
     expire_date: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, comment="Дійсна до"
     )
+
+    # Relationships
+    user: Mapped["UserTable"] = relationship(back_populates="sessions")
 
     def __repr__(self):
         return f"Session {self.session_id} for User {self.user_id} (expires {self.expire_date})"

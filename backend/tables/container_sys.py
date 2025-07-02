@@ -1,7 +1,14 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import String, Integer, Identity, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.tables.base import BaseTable
+
+
+if TYPE_CHECKING:
+    from .coupon_complect import CouponComplectTable
+    from .coupon_load import CouponLoadTable
+    from .coupon_extract import CouponExtractTable
 
 
 class ContainerSysTable(BaseTable):
@@ -15,20 +22,19 @@ class ContainerSysTable(BaseTable):
     )
     coupon_complect_id: Mapped[int | None] = mapped_column(
         ForeignKey("T_COUPON_COMPLECTS.coupon_complect_id"),
-        nullable=True,
         comment="ID комплекту зразків-свідків",
     )
-    name: Mapped[str] = mapped_column(
-        String(3), nullable=False, comment="Індекс контейнерної збірки"
-    )
+    name: Mapped[str] = mapped_column(String(3), comment="Індекс контейнерної збірки")
 
     # Relationships
-    coupon_complect = relationship(
-        "CouponComplectTable", back_populates="container_systems"
+    coupon_complect: Mapped["CouponComplectTable"] = relationship(
+        back_populates="container_systems"
     )
-    coupon_loads = relationship("CouponLoadTable", back_populates="irrad_container_sys")
-    coupon_extracts = relationship(
-        "CouponExtractTable", back_populates="irrad_container_sys"
+    coupon_loads: Mapped[list["CouponLoadTable"]] = relationship(
+        back_populates="irrad_container_sys"
+    )
+    coupon_extracts: Mapped[list["CouponExtractTable"]] = relationship(
+        back_populates="irrad_container_sys"
     )
 
     def __repr__(self):

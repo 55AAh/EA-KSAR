@@ -13,6 +13,7 @@ import DocumentUpload from "./document/DocumentUpload";
 import ChangePassword from "./ChangePassword";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import Unit from "./Unit";
+import PlacementSearch from "./search/PlacementSearch";
 
 export default function App() {
   return (
@@ -36,6 +37,10 @@ export default function App() {
             />{" "}
             <Route path="/navigator/search/plants" element={<PlantSearch />} />{" "}
             <Route path="/navigator/search/units" element={<UnitSearch />} />{" "}
+            <Route
+              path="/navigator/search/placements"
+              element={<PlacementSearch />}
+            />
             <Route path="/documents" element={<DocumentsSearch />} />
             <Route path="/documents/upload" element={<DocumentUpload />} />
             <Route path="/documents/:id" element={<Document />} />
