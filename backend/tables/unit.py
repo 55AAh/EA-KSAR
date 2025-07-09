@@ -1,9 +1,15 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Integer, Identity, ForeignKey, Numeric, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.tables.base import BaseTable
+
+
+if TYPE_CHECKING:
+    from .plant import NppTable
+    from .reactor_vessel import ReactorVesselTable
 
 
 class NppUnitTable(BaseTable):
@@ -13,36 +19,52 @@ class NppUnitTable(BaseTable):
     }
 
     unit_id: Mapped[int] = mapped_column(
-        Integer, Identity(), primary_key=True, comment="ID блоку"
+        Integer,
+        Identity(),
+        primary_key=True,
+        comment="ID блоку",
     )
     plant_id: Mapped[int] = mapped_column(
-        ForeignKey("T_NPPS.plant_id"), nullable=False, comment="ID АЕС"
+        ForeignKey("T_NPPS.plant_id"),
+        comment="ID АЕС",
     )
-    num: Mapped[int] = mapped_column(Numeric(1), nullable=False, comment="Номер блоку")
+    num: Mapped[int] = mapped_column(
+        Numeric(1),
+        comment="Номер блоку",
+    )
     name: Mapped[str] = mapped_column(
-        String(30), nullable=False, comment="Найменування блоку"
+        String(30),
+        comment="Найменування блоку",
     )
     name_eng: Mapped[str] = mapped_column(
-        String(30), nullable=False, comment="Найменування блоку (англ.)"
+        String(30),
+        comment="Найменування блоку (англ.)",
     )
-    design: Mapped[str] = mapped_column(String(30), nullable=False, comment="Проект")
+    design: Mapped[str] = mapped_column(
+        String(30),
+        comment="Проект",
+    )
     stage: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, comment="Черга"
+        String(50),
+        nullable=True,
+        comment="Черга",
     )
     power: Mapped[int] = mapped_column(
-        Numeric(6, 2), nullable=False, comment="Встановлена потужність, МВт"
+        Numeric(6, 2),
+        comment="Встановлена потужність, МВт",
     )
     start_date: Mapped[datetime | None] = mapped_column(
-        Date, nullable=True, comment="Дата початку експлуатації"
+        Date,
+        nullable=True,
+        comment="Дата початку експлуатації",
     )
 
     # Relationships
-    plant = relationship("NppTable", back_populates="units")
-    placements = relationship(
-        "PlacementTable", back_populates="unit", cascade="all, delete-orphan"
+    plant: Mapped["NppTable"] = relationship(
+        back_populates="units",
     )
-    coupon_complects = relationship(
-        "CouponComplectTable", back_populates="unit", cascade="all, delete-orphan"
+    reactor_vessel: Mapped["ReactorVesselTable"] = relationship(
+        back_populates="unit",
     )
 
     def __repr__(self):

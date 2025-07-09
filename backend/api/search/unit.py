@@ -1,19 +1,40 @@
 from backend.db import DbSessionDep
 from backend.tables import NppUnitTable, NppTable
 from .base import search_router
+from typing import Optional
+from fastapi import Query
 
 
-@search_router.get("/units/", operation_id="get_all_units")
-def get_all_units(db: DbSessionDep):
+@search_router.get(
+    "/units/",
+    operation_id="get_all_units",
+    summary="Get all units",
+    description="Retrieve the full list of all nuclear power plant units, optionally filtered by plant",
+)
+def get_all_units(
+    db: DbSessionDep,
+    plant_sh_name: Optional[str] = Query(
+        None, description="Filter units by plant short name (e.g., 'ЗАЕС')"
+    ),
+):
     """
-    Get the full list of all units with their plant information.
+    Get the full list of all units, optionally filtered by plant short name.
     """
-    # Query units with their associated plant data
-    units = (
-        db.query(NppUnitTable)
-        .join(NppTable, NppUnitTable.plant_id == NppTable.plant_id)
-        .all()
+    # Base query
+    query = db.query(NppUnitTable)
+
+    # Add plant filter if provided
+    if plant_sh_name:
+        query = query.join(NppTable, NppUnitTable.plant_id == NppTable.plant_id).filter(
+            NppTable.sh_name == plant_sh_name
+        )
+
+    # Order by plant number and unit number
+    query = query.join(NppTable, NppUnitTable.plant_id == NppTable.plant_id).order_by(
+        NppTable.num, NppUnitTable.num
     )
+
+    units = query.all()
 
     result = []
     for unit in units:
@@ -25,11 +46,6 @@ def get_all_units(db: DbSessionDep):
             "stage": unit.stage,
             "power": unit.power,
             "start_date": unit.start_date.isoformat() if unit.start_date else None,
-            # Plant information
-            "plant_name": unit.plant.name,
-            "plant_sh_name": unit.plant.sh_name,
-            "plant_name_eng": unit.plant.name_eng,
-            "plant_sh_name_eng": unit.plant.sh_name_eng,
         }
         result.append(unit_data)
 

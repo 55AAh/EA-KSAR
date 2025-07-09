@@ -1,14 +1,15 @@
-from fastapi import HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from backend.db import DbSessionDep
 from backend.tables import DocumentTable
-from .base import search_router
 import urllib.parse
 from datetime import datetime
 from typing import Optional
 
+document_router = APIRouter(prefix="/documents", tags=["documents"])
 
-@search_router.get("/documents/", operation_id="get_all_documents")
+
+@document_router.get("/", operation_id="get_all_documents")
 def get_all_documents(db: DbSessionDep):
     """
     Get the full list of all documents (excluding binary content for performance).
@@ -38,7 +39,7 @@ def get_all_documents(db: DbSessionDep):
     return result
 
 
-@search_router.get("/documents/{document_id}", operation_id="get_document_by_id")
+@document_router.get("/{document_id}", operation_id="get_document_by_id")
 def get_document_by_id(document_id: int, db: DbSessionDep):
     """
     Get information about a single document by its ID (excluding binary content for performance).
@@ -72,7 +73,7 @@ def get_document_by_id(document_id: int, db: DbSessionDep):
     return doc_data
 
 
-@search_router.post("/documents/upload", operation_id="upload_document")
+@document_router.post("/upload", operation_id="upload_document")
 async def upload_document(
     db: DbSessionDep,
     file: UploadFile = File(...),
@@ -167,7 +168,7 @@ async def upload_document(
         )
 
 
-@search_router.delete("/documents/{document_id}", operation_id="delete_document")
+@document_router.delete("/{document_id}", operation_id="delete_document")
 def delete_document(document_id: int, db: DbSessionDep):
     """
     Delete a document by its ID.
@@ -194,9 +195,7 @@ def delete_document(document_id: int, db: DbSessionDep):
         )
 
 
-@search_router.get(
-    "/documents/{document_id}/download", operation_id="download_document"
-)
+@document_router.get("/{document_id}/download", operation_id="download_document")
 def download_document(document_id: int, db: DbSessionDep):
     """
     Download a document by its ID.

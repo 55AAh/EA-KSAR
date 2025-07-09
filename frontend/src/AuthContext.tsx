@@ -17,16 +17,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   // Retrieves data about the current user
   async function fetchUserData() {
-    console.log("Retrieving data about current user...");
-    const response = await fetch("/api/auth/me", {
-      credentials: "include",
-    });
-    if (response.ok) {
-      const me = await response.json();
-      console.log("Current user:", me);
-      setUser(me);
+    try {
+      const response = await fetch("/api/auth/me");
+      if (response.ok) {
+        const me = await response.json();
+        setUser(me);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   // Called when unauthorized user successfully logs in

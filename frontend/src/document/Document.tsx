@@ -1,54 +1,37 @@
-import {
-  Container,
-  Card,
-  Button,
-  Row,
-  Col,
-  Badge,
-  Alert,
-} from "react-bootstrap";
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { Container, Card, Button, Row, Col, Badge } from "react-bootstrap";
+import { useEffect } from "react";
+import { useNavigate, LoaderFunctionArgs, useLoaderData } from "react-router";
 import { Document as DocumentType } from "../types";
+import { parseErrorResponse } from "../utils";
+
+// Loader function for Document page
+export async function documentLoader({ params }: LoaderFunctionArgs) {
+  const { id } = params;
+
+  if (!id) {
+    throw new Response("Document ID is required", {
+      status: 404,
+      statusText: "Not Found",
+    });
+  }
+
+  const response = await fetch(`/api/documents/${id}`);
+
+  if (!response.ok) {
+    throw await parseErrorResponse(response);
+  }
+
+  return await response.json();
+}
 
 const Document = () => {
-  const { id } = useParams<{ id: string }>();
+  const document = useLoaderData() as DocumentType;
   const navigate = useNavigate();
-  const [document, setDocument] = useState<DocumentType | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch document information on component mount
+  // Set page title with document name
   useEffect(() => {
-    const fetchDocument = async () => {
-      if (!id) {
-        setError("ID документа не вказано");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/search/documents/${id}`);
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Документ не знайдено");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setDocument(data);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Помилка завантаження документа"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDocument();
-  }, [id]);
+    window.document.title = `${document.name} - КСАР`;
+  }, [document.name]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -65,9 +48,7 @@ const Document = () => {
     if (!document) return;
 
     try {
-      const response = await fetch(
-        `/api/search/documents/${document.id}/download`
-      );
+      const response = await fetch(`/api/documents/${document.id}/download`);
       if (!response.ok) {
         throw new Error("Помилка завантаження файлу");
       }
@@ -98,7 +79,7 @@ const Document = () => {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/search/documents/${document.id}`, {
+      const response = await fetch(`/api/documents/${document.id}`, {
         method: "DELETE",
       });
 
@@ -114,52 +95,21 @@ const Document = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <Container fluid className="py-4 h-100">
-        <div className="d-flex justify-content-center align-items-center h-100">
-          <div className="text-center">
-            <div className="fs-5">Завантаження документа...</div>
-          </div>
-        </div>
-      </Container>
-    );
-  }
-
-  if (error || !document) {
-    return (
-      <Container fluid className="py-4">
-        <Alert variant="danger">
-          <Alert.Heading>Помилка завантаження</Alert.Heading>
-          <p>{error || "Документ не знайдено"}</p>
-          <Button
-            variant="outline-danger"
-            onClick={() => navigate("/documents")}
-          >
-            ← Повернутися до списку документів
-          </Button>
-        </Alert>
-      </Container>
-    );
-  }
-
   return (
-    <Container fluid className="py-4">
+    <Container id="document-page-container" fluid className="py-4">
       {/* Header with navigation */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div
+        id="document-header"
+        className="d-flex justify-content-between align-items-center mb-4"
+      >
         <div className="d-flex align-items-center">
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            onClick={() => navigate("/documents")}
-            className="me-3"
-          >
-            ← Назад до списку
-          </Button>
-          <h1 className="mb-0">📄 Документ</h1>
+          <h1 id="document-page-title" className="mb-0">
+            📄 Документ
+          </h1>
         </div>
-        <div>
+        <div id="document-action-buttons">
           <Button
+            id="document-download-button"
             variant="outline-primary"
             size="sm"
             onClick={handleDownload}
@@ -167,21 +117,34 @@ const Document = () => {
           >
             📥 Завантажити
           </Button>
-          <Button variant="outline-danger" size="sm" onClick={handleDelete}>
+          <Button
+            id="document-delete-button"
+            variant="outline-danger"
+            size="sm"
+            onClick={handleDelete}
+          >
             🗑️ Видалити
           </Button>
         </div>
       </div>
-      <Row className="h-100" style={{ minHeight: "calc(100vh - 200px)" }}>
+      <Row
+        id="document-content-row"
+        className="h-100"
+        style={{ minHeight: "calc(100vh - 200px)" }}
+      >
         {/* Left Column - Document Information */}
         <Col md={4} className="pe-3">
-          <Card className="h-100">
+          <Card id="document-info-card" className="h-100">
             <Card.Header>
-              <h5 className="mb-0">📋 Інформація про документ</h5>
+              <h5 id="document-info-title" className="mb-0">
+                📋 Інформація про документ
+              </h5>
             </Card.Header>
-            <Card.Body>
+            <Card.Body id="document-info-body">
               <div className="mb-4">
-                <h4 className="text-primary mb-3">{document.name}</h4>
+                <h4 id="document-name" className="text-primary mb-3">
+                  {document.name}
+                </h4>
 
                 <Row className="mb-3">
                   <Col sm={4}>
@@ -266,12 +229,20 @@ const Document = () => {
         </Col>
         {/* Right Column - Document Preview */}
         <Col md={8} className="ps-3">
-          <Card className="h-100">
+          <Card id="document-preview-card" className="h-100">
             <Card.Header>
-              <h5 className="mb-0">👁️ Попередній перегляд</h5>
+              <h5 id="document-preview-title" className="mb-0">
+                👁️ Попередній перегляд
+              </h5>
             </Card.Header>
-            <Card.Body className="d-flex justify-content-center align-items-center">
-              <div className="text-center text-muted">
+            <Card.Body
+              id="document-preview-body"
+              className="d-flex justify-content-center align-items-center"
+            >
+              <div
+                id="document-preview-placeholder"
+                className="text-center text-muted"
+              >
                 <div className="fs-1 mb-3">📄</div>
                 <div className="fs-5 mb-2">Попередній перегляд недоступний</div>
                 <div className="small mb-3">
@@ -281,7 +252,12 @@ const Document = () => {
                   </Badge>{" "}
                   поки що не підтримується
                 </div>
-                <Button variant="primary" onClick={handleDownload} size="sm">
+                <Button
+                  id="document-preview-download-button"
+                  variant="primary"
+                  onClick={handleDownload}
+                  size="sm"
+                >
                   📥 Завантажити для перегляду
                 </Button>
               </div>

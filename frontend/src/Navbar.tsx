@@ -20,12 +20,14 @@ export default function Navbar() {
 
   // Fetch unit name when on unit page
   useEffect(() => {
-    if (params.name_eng && location.pathname.includes("/navigator/units/")) {
+    if (params.name_eng && location.pathname.includes("/units/")) {
       fetch(`/api/unit/${params.name_eng}`)
         .then((response) => response.json())
         .then((data) => {
-          if (data.unit && data.unit.name) {
-            setUnitName(data.unit.name);
+          if (data && data.name) {
+            setUnitName(data.name);
+          } else {
+            setUnitName(params.name_eng || null); // Fallback to name_eng
           }
         })
         .catch((error) => {
@@ -50,46 +52,28 @@ export default function Navbar() {
       currentPath += `/${segment}`;
       const isLast = index === pathnames.length - 1;
 
-      if (segment === "navigator") {
+      if (segment === "units" && index === 0) {
         breadcrumbs.push({
-          label: "Навігатор",
-          path: "/navigator",
+          label: "Енергоблоки",
+          path: "/units",
           active: isLast,
         });
-      } else if (segment === "units" && pathnames[index - 1] === "navigator") {
-        breadcrumbs.push({
-          label: "Блоки АЕС",
-          path: "/navigator/units",
-          active: isLast,
-        });
-      } else if (segment === "search" && pathnames[index - 1] === "navigator") {
-        breadcrumbs.push({
-          label: "Пошук",
-          path: "/navigator/search",
-          active: isLast,
-        });
-      } else if (segment === "plants" && pathnames[index - 1] === "search") {
-        breadcrumbs.push({
-          label: "Пошук АЕС",
-          path: "/navigator/search/plants",
-          active: isLast,
-        });
-      } else if (segment === "units" && pathnames[index - 1] === "search") {
-        breadcrumbs.push({
-          label: "Пошук енергоблоків",
-          path: "/navigator/search/units",
-          active: isLast,
-        });
-      } else if (segment === "documents") {
+      } else if (segment === "documents" && index === 0) {
         breadcrumbs.push({
           label: "Документи",
           path: "/documents",
+          active: isLast && pathnames.length === 1,
+        });
+      } else if (segment === "upload" && pathnames.includes("documents")) {
+        breadcrumbs.push({
+          label: "Завантажити документ",
+          path: currentPath,
           active: isLast,
         });
-      } else if (segment === "search" && pathnames[index - 1] === "documents") {
+      } else if (segment === "change-password") {
         breadcrumbs.push({
-          label: "Пошук документів",
-          path: "/documents/search",
+          label: "Змінити пароль",
+          path: currentPath,
           active: isLast,
         });
       } else if (params.name_eng && isLast && pathnames.includes("units")) {
@@ -97,6 +81,17 @@ export default function Navbar() {
         const displayName = unitName || params.name_eng;
         breadcrumbs.push({
           label: displayName,
+          path: currentPath,
+          active: true,
+        });
+      } else if (
+        pathnames.includes("documents") &&
+        /^\d+$/.test(segment) &&
+        isLast
+      ) {
+        // For document details page (numeric ID)
+        breadcrumbs.push({
+          label: "Перегляд документа",
           path: currentPath,
           active: true,
         });
@@ -108,16 +103,17 @@ export default function Navbar() {
 
   const breadcrumbs = generateBreadcrumbs();
   return (
-    <BootstrapNavbar className="bg-body-tertiary">
+    <BootstrapNavbar id="main-navbar" className="bg-body-tertiary">
       <Container fluid>
-        <BootstrapNavbar.Brand as={Link} to="/">
+        <BootstrapNavbar.Brand id="navbar-brand" as={Link} to="/">
           КСАР
         </BootstrapNavbar.Brand>{" "}
         {/* Dynamic Breadcrumbs in navbar */}
         <div className="me-auto d-flex align-items-center">
           {breadcrumbs.length > 0 && (
-            <nav aria-label="breadcrumb">
+            <nav id="breadcrumb-nav" aria-label="breadcrumb">
               <ol
+                id="breadcrumb-list"
                 className="breadcrumb mb-0"
                 style={{ backgroundColor: "transparent" }}
               >
@@ -141,7 +137,7 @@ export default function Navbar() {
             </nav>
           )}
         </div>
-        <NavDropdown title={user.username} align="end">
+        <NavDropdown id="user-dropdown" title={user.username} align="end">
           <NavDropdown.Item as={Link} to="/change-password">
             Змінити пароль
           </NavDropdown.Item>

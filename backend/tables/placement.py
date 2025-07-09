@@ -1,9 +1,13 @@
-from datetime import datetime
-
+from typing import TYPE_CHECKING
 from sqlalchemy import String, Integer, Identity, ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.tables.base import BaseTable
+
+
+if TYPE_CHECKING:
+    from .coupon_load import CouponLoadTable
+    from .sector import ReactorVesselSectorTable
 
 
 class PlacementTable(BaseTable):
@@ -13,22 +17,32 @@ class PlacementTable(BaseTable):
     }
 
     placement_id: Mapped[int] = mapped_column(
-        Integer, Identity(), primary_key=True, comment="ID місця встановлення КЗ"
+        Integer,
+        Identity(),
+        primary_key=True,
+        comment="ID місця встановлення КЗ",
     )
-    unit_id: Mapped[int] = mapped_column(
-        ForeignKey("T_NPP_UNITS.unit_id"), nullable=False, comment="ID блоку"
+    sector_id: Mapped[int] = mapped_column(
+        ForeignKey("T_RCT_VESSEL_SECTORS.rpv_sector_id"),
+        comment="ID сектору",
     )
-    sector: Mapped[int] = mapped_column(Numeric(1), nullable=False, comment="№ сектору")
-    sector_num: Mapped[int] = mapped_column(
-        Numeric(1), nullable=False, comment="№ місця в секторі"
+    num_in_sector: Mapped[int] = mapped_column(
+        Numeric(1),
+        comment="№ місця в секторі",
     )
     name: Mapped[str] = mapped_column(
-        String(3), nullable=False, comment="Технологічне позначення"
+        String(3),
+        comment="Технологічне позначення",
     )
 
     # Relationships
-    unit = relationship("NppUnitTable", back_populates="placements")
-    coupon_loads = relationship("CouponLoadTable", back_populates="irrad_placement")
+    coupon_loads: Mapped[list["CouponLoadTable"]] = relationship(
+        back_populates="irrad_placement",
+        order_by="CouponLoadTable.load_date",
+    )
+    sector: Mapped["ReactorVesselSectorTable"] = relationship(
+        back_populates="placements",
+    )
 
     def __repr__(self):
-        return f"{self.unit.name}-{self.name}" if self.unit else f"{self.name}"
+        return f"Placement {self.name}"

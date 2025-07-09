@@ -13,7 +13,12 @@ def plants_units(db: DbSessionDep):
     Get the list of plants and their units.
     """
 
-    plants = db.query(NppTable).options(joinedload(NppTable.units)).all()
+    plants = (
+        db.query(NppTable)
+        .options(joinedload(NppTable.units))
+        .order_by(NppTable.num)
+        .all()
+    )
 
     result = []
     for plant in plants:

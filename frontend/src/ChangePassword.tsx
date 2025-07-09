@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Container, Card, Form, Button, Alert } from "react-bootstrap";
 import { usePageTitle } from "./hooks/usePageTitle";
+import { parseErrorResponse } from "./utils";
 
 export default function ChangePassword() {
   usePageTitle("КСАР - Зміна паролю");
@@ -13,6 +14,11 @@ export default function ChangePassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Set page title
+  useEffect(() => {
+    document.title = "Змінити пароль - КСАР";
+  }, []);
 
   // Get the previous page to return to after successful password change
   const previousPage = location.state?.from || "/";
@@ -47,16 +53,16 @@ export default function ChangePassword() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Помилка зміни пароля");
+        throw await parseErrorResponse(response);
       }
-
       // Show success message
       setSuccess(true);
+      setError(null);
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка зміни пароля!");
+      console.error(err);
+      setError("Сталася невідома помилка!");
     } finally {
       setLoading(false);
     }
@@ -73,26 +79,34 @@ export default function ChangePassword() {
 
   return (
     <Container
+      id="change-password-page-container"
       fluid
       className="py-4 d-flex justify-content-center align-items-center"
       style={{ minHeight: "calc(100vh - 60px)" }}
     >
-      <div style={{ width: "100%", maxWidth: "500px" }}>
-        <Card className="shadow">
+      <div
+        id="change-password-form-wrapper"
+        style={{ width: "100%", maxWidth: "500px" }}
+      >
+        <Card id="change-password-card" className="shadow">
           <Card.Header className="bg-primary text-white">
-            <h4 className="mb-0">🔒 Змінити пароль</h4>
+            <h4 id="change-password-title" className="mb-0">
+              🔒 Змінити пароль
+            </h4>
           </Card.Header>
-          <Card.Body className="p-4">
+          <Card.Body id="change-password-card-body" className="p-4">
             {success ? (
-              <div className="text-center">
+              <div id="change-password-success" className="text-center">
                 <Alert variant="success" className="mb-4">
                   <h5>✅ Пароль успішно змінено!</h5>
                   <p className="mb-0">
-                    Ваш пароль було успішно оновлено. Всі сесії завершено з
-                    міркувань безпеки.
+                    Ваш пароль було успішно оновлено.
+                    <br />
+                    Всі сесії завершено з міркувань безпеки.
                   </p>
                 </Alert>
                 <Button
+                  id="change-password-success-ok-button"
                   variant="primary"
                   size="lg"
                   onClick={handleSuccessOk}
@@ -102,9 +116,13 @@ export default function ChangePassword() {
                 </Button>
               </div>
             ) : (
-              <Form onSubmit={handleSubmit}>
+              <Form id="change-password-form" onSubmit={handleSubmit}>
                 {error && (
-                  <Alert variant="danger" className="mb-3">
+                  <Alert
+                    id="change-password-error-alert"
+                    variant="danger"
+                    className="mb-3"
+                  >
                     {error}
                   </Alert>
                 )}
@@ -112,6 +130,7 @@ export default function ChangePassword() {
                 <Form.Group className="mb-3">
                   <Form.Label>Новий пароль</Form.Label>
                   <Form.Control
+                    id="change-password-new-password-input"
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -125,6 +144,7 @@ export default function ChangePassword() {
                 <Form.Group className="mb-4">
                   <Form.Label>Підтвердження нового пароля</Form.Label>
                   <Form.Control
+                    id="change-password-confirm-password-input"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -136,6 +156,7 @@ export default function ChangePassword() {
 
                 <div className="d-grid gap-2">
                   <Button
+                    id="change-password-submit-button"
                     variant="primary"
                     type="submit"
                     disabled={loading}
@@ -144,6 +165,7 @@ export default function ChangePassword() {
                     {loading ? "Змінюємо пароль..." : "Змінити пароль"}
                   </Button>
                   <Button
+                    id="change-password-cancel-button"
                     variant="secondary"
                     onClick={handleCancel}
                     disabled={loading}

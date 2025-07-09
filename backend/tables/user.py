@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Integer, String, Identity, ForeignKey, DateTime
+from sqlalchemy import Integer, String, Identity, ForeignKey, DateTime, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.tables.base import BaseTable
+from backend.tables.base import BaseTable, OracleBoolean
 
 
 class UserTable(BaseTable):
@@ -13,21 +13,41 @@ class UserTable(BaseTable):
     }
 
     user_id: Mapped[int] = mapped_column(
-        Integer, Identity(), primary_key=True, comment="ID користувача"
+        Integer,
+        Identity(),
+        primary_key=True,
+        comment="ID користувача",
     )
     username: Mapped[str] = mapped_column(
-        String(50), nullable=False, unique=True, comment="Логін"
+        String(50),
+        nullable=False,
+        unique=True,
+        comment="Логін",
     )
-    full_name: Mapped[str] = mapped_column(String(255), comment="ПІБ")
-    email: Mapped[str] = mapped_column(String(255), comment="Електронна адреса")
+    full_name: Mapped[str] = mapped_column(
+        String(255),
+        comment="ПІБ",
+    )
+    email: Mapped[str] = mapped_column(
+        String(255),
+        comment="Електронна адреса",
+    )
     enabled: Mapped[bool] = mapped_column(
-        Boolean(create_constraint=True),
+        OracleBoolean(create_constraint=True),
         default=True,
-        server_default="1",
+        server_default=text("1"),
         comment="Активний",
     )
     password_hash: Mapped[str] = mapped_column(
-        String(255), nullable=True, comment="Хеш пароля"
+        String(255),
+        nullable=True,
+        comment="Хеш пароля",
+    )
+
+    # Relationships
+    sessions: Mapped[list["UserSessionTable"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self):
@@ -41,13 +61,24 @@ class UserSessionTable(BaseTable):
     }
 
     session_id: Mapped[str] = mapped_column(
-        String(64), primary_key=True, comment="ID сесії"
+        String(64),
+        primary_key=True,
+        comment="ID сесії",
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("T_USERS.user_id"), nullable=False, comment="ID користувача"
+        ForeignKey("T_USERS.user_id", ondelete="CASCADE"),
+        nullable=False,
+        comment="ID користувача",
     )
     expire_date: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, comment="Дійсна до"
+        DateTime,
+        nullable=False,
+        comment="Дійсна до",
+    )
+
+    # Relationships
+    user: Mapped["UserTable"] = relationship(
+        back_populates="sessions",
     )
 
     def __repr__(self):

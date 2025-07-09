@@ -13,18 +13,33 @@ class DocumentTable(BaseTable):
     }
 
     doc_id: Mapped[int] = mapped_column(
-        Integer, Identity(), primary_key=True, comment="ID документа"
+        Integer,
+        Identity(),
+        primary_key=True,
+        comment="ID документа",
     )
     full_name: Mapped[str | None] = mapped_column(
-        String(250), nullable=True, comment="Назва документу"
+        String(250),
+        nullable=True,
+        comment="Назва документу",
     )
     code_name: Mapped[str] = mapped_column(String(50), comment="№ (шифр) документу")
     issue_date: Mapped[datetime | None] = mapped_column(
-        Date, nullable=True, comment="Дата введення в дію"
+        Date,
+        nullable=True,
+        comment="Дата введення в дію",
     )
     valid_until_date: Mapped[datetime | None] = mapped_column(
-        Date, nullable=True, comment="Термін дії"
+        Date,
+        nullable=True,
+        comment="Термін дії",
     )
 
-    filename: Mapped[str] = mapped_column(String(255), comment="Ім'я файлу")
-    binary_content: Mapped[bytes] = mapped_column(LargeBinary, comment="Вміст файлу")
+    filename: Mapped[str] = mapped_column(
+        String(255),
+        comment="Ім'я файлу",
+    )
+    binary_content: Mapped[bytes] = mapped_column(
+        LargeBinary,
+        comment="Вміст файлу",
+    )

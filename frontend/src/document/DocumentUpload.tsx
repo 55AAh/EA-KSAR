@@ -8,7 +8,7 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 
 interface DocumentFormData {
@@ -34,6 +34,11 @@ const DocumentUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  // Set page title
+  useEffect(() => {
+    document.title = "Завантажити документ - КСАР";
+  }, []);
 
   const handleInputChange = (field: keyof DocumentFormData, value: string) => {
     setFormData((prev) => ({
@@ -113,7 +118,7 @@ const DocumentUpload = () => {
         uploadFormData.append("valid_until_date", formData.validUntilDate);
       }
 
-      const response = await fetch("/api/search/documents/upload", {
+      const response = await fetch("/api/documents/upload", {
         method: "POST",
         body: uploadFormData,
       });
@@ -145,40 +150,44 @@ const DocumentUpload = () => {
   };
 
   return (
-    <Container fluid className="py-4">
+    <Container id="document-upload-page-container" fluid className="py-4">
       {/* Header */}
-      <div className="d-flex align-items-center mb-4">
-        <Button
-          variant="outline-secondary"
-          size="sm"
-          onClick={() => navigate("/documents")}
-          className="me-3"
-        >
-          ← Назад до списку
-        </Button>
-        <h1 className="mb-0">📤 Створити новий документ</h1>
+      <div
+        id="document-upload-header"
+        className="d-flex align-items-center mb-4"
+      >
+        <h1 id="document-upload-page-title" className="mb-0">
+          📤 Створити новий документ
+        </h1>
       </div>
 
       <Row className="justify-content-center">
         <Col md={8} lg={6}>
-          <Card>
+          <Card id="document-upload-form-card">
             <Card.Header>
-              <h5 className="mb-0">📋 Інформація про документ</h5>
+              <h5 id="document-upload-form-title" className="mb-0">
+                📋 Інформація про документ
+              </h5>
             </Card.Header>
-            <Card.Body>
+            <Card.Body id="document-upload-form-body">
               {error && (
-                <Alert variant="danger" className="mb-4">
+                <Alert
+                  id="document-upload-error-alert"
+                  variant="danger"
+                  className="mb-4"
+                >
                   {error}
                 </Alert>
               )}
 
-              <Form onSubmit={handleUpload}>
+              <Form id="document-upload-form" onSubmit={handleUpload}>
                 {/* Required Fields */}
                 <Form.Group className="mb-3">
                   <Form.Label>
                     Назва документа <span className="text-danger">*</span>
                   </Form.Label>
                   <Form.Control
+                    id="document-upload-name-input"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
@@ -192,6 +201,7 @@ const DocumentUpload = () => {
                     № (шифр) документа <span className="text-danger">*</span>
                   </Form.Label>
                   <Form.Control
+                    id="document-upload-code-input"
                     type="text"
                     value={formData.code}
                     onChange={(e) => handleInputChange("code", e.target.value)}
@@ -204,6 +214,7 @@ const DocumentUpload = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>Дата введення в дію</Form.Label>
                   <Form.Control
+                    id="document-upload-issue-date-input"
                     type="date"
                     value={formData.issueDate}
                     onChange={(e) =>
@@ -215,6 +226,7 @@ const DocumentUpload = () => {
                 <Form.Group className="mb-4">
                   <Form.Label>Термін дії</Form.Label>
                   <Form.Control
+                    id="document-upload-valid-until-input"
                     type="date"
                     value={formData.validUntilDate}
                     onChange={(e) =>
@@ -230,6 +242,7 @@ const DocumentUpload = () => {
                   </Form.Label>
 
                   <div
+                    id="document-upload-file-dropzone"
                     className={`border rounded p-4 text-center ${
                       dragActive
                         ? "border-primary bg-light"
@@ -243,6 +256,7 @@ const DocumentUpload = () => {
                     onDrop={handleDrop}
                   >
                     <input
+                      id="document-upload-file-input"
                       ref={fileInputRef}
                       type="file"
                       style={{ display: "none" }}
@@ -279,6 +293,7 @@ const DocumentUpload = () => {
                 {/* Submit Button */}
                 <div className="d-grid gap-2">
                   <Button
+                    id="document-upload-submit-button"
                     type="submit"
                     variant="primary"
                     size="lg"

@@ -1,6 +1,6 @@
 import { Container, Card, Badge, Button } from "react-bootstrap";
 import { Link } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePageTitle } from "./hooks/usePageTitle";
 
 // Types for feed items
@@ -50,25 +50,43 @@ function FeedSection({
   badgeVariant,
   newItemText,
 }: FeedSectionProps) {
+  const sectionId = title.toLowerCase().replace(/\s+/g, "-");
+
   return (
-    <Card style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Card
+      id={`feed-section-${sectionId}`}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+    >
       <Card.Header
+        id={`feed-header-${sectionId}`}
         className={`text-${primaryColor} bg-white border-bottom flex-shrink-0`}
       >
-        <h6 className="mb-0">
+        <h6 id={`feed-title-${sectionId}`} className="mb-0">
           {title}
           {items.filter((item) => !item.isRead).length > 0 && (
-            <Badge bg={badgeVariant} className="ms-2">
+            <Badge
+              id={`feed-unread-badge-${sectionId}`}
+              bg={badgeVariant}
+              className="ms-2"
+            >
               {items.filter((item) => !item.isRead).length}
             </Badge>
           )}
         </h6>
       </Card.Header>
-      <Card.Body className="p-0 flex-grow-1" style={{ overflow: "hidden" }}>
-        <div style={{ height: "100%", overflowY: "auto" }}>
+      <Card.Body
+        id={`feed-body-${sectionId}`}
+        className="p-0 flex-grow-1"
+        style={{ overflow: "hidden" }}
+      >
+        <div
+          id={`feed-items-container-${sectionId}`}
+          style={{ height: "100%", overflowY: "auto" }}
+        >
           {items.map((item) => (
             <div
               key={item.id}
+              id={`feed-item-${sectionId}-${item.id}`}
               className={`border-bottom ${
                 item.isRead ? "bg-light" : "bg-white"
               }`}
@@ -82,9 +100,13 @@ function FeedSection({
               }}
             >
               {/* Header with title and controls */}
-              <div className="d-flex justify-content-between align-items-start mb-1">
+              <div
+                id={`feed-item-header-${sectionId}-${item.id}`}
+                className="d-flex justify-content-between align-items-start mb-1"
+              >
                 <div className="flex-grow-1 me-2">
                   <h6
+                    id={`feed-item-title-${sectionId}-${item.id}`}
                     className={`mb-1 ${
                       item.isRead ? "text-muted" : "text-dark fw-bold"
                     }`}
@@ -93,8 +115,12 @@ function FeedSection({
                     {item.title}
                   </h6>
                 </div>
-                <div className="d-flex align-items-center flex-shrink-0">
+                <div
+                  id={`feed-item-controls-${sectionId}-${item.id}`}
+                  className="d-flex align-items-center flex-shrink-0"
+                >
                   <Button
+                    id={`feed-item-read-toggle-${sectionId}-${item.id}`}
                     variant="link"
                     size="sm"
                     onClick={() => onToggleReadStatus(item.id)}
@@ -121,6 +147,7 @@ function FeedSection({
                     </span>
                   </Button>
                   <Button
+                    id={`feed-item-delete-${sectionId}-${item.id}`}
                     variant="link"
                     size="sm"
                     onClick={() => onDeleteItem(item.id)}
@@ -140,17 +167,29 @@ function FeedSection({
               </div>
               {/* Preview text */}
               <div
+                id={`feed-item-preview-${sectionId}-${item.id}`}
                 className={`mb-2 ${item.isRead ? "text-muted" : "text-dark"}`}
                 style={{ fontSize: "11px", lineHeight: "1.4" }}
                 dangerouslySetInnerHTML={{ __html: item.preview }}
               />
               {/* Footer with date and badge */}
-              <div className="d-flex justify-content-between align-items-center">
-                <small className="text-muted" style={{ fontSize: "10px" }}>
+              <div
+                id={`feed-item-footer-${sectionId}-${item.id}`}
+                className="d-flex justify-content-between align-items-center"
+              >
+                <small
+                  id={`feed-item-date-${sectionId}-${item.id}`}
+                  className="text-muted"
+                  style={{ fontSize: "10px" }}
+                >
                   {item.date}
                 </small>
                 {!item.isRead && (
-                  <Badge bg={badgeVariant} style={{ fontSize: "9px" }}>
+                  <Badge
+                    id={`feed-item-new-badge-${sectionId}-${item.id}`}
+                    bg={badgeVariant}
+                    style={{ fontSize: "9px" }}
+                  >
                     {newItemText}
                   </Badge>
                 )}
@@ -173,18 +212,25 @@ function AppCard({
 }: AppCardProps) {
   const cardContent = (
     <Card
-      className={`shadow-sm ${!isImplemented ? "opacity-50" : ""}`}
+      id={`app-card-${app.id}`}
+      className={`shadow-sm`}
       style={{
         ...style,
         cursor: isImplemented ? "pointer" : "not-allowed",
-        filter: !isImplemented ? "grayscale(50%)" : "none",
+        opacity: !isImplemented ? 0.6 : 1,
+        filter: !isImplemented ? "grayscale(70%)" : "none",
       }}
       onMouseEnter={isImplemented ? onMouseEnter : undefined}
       onMouseLeave={isImplemented ? onMouseLeave : undefined}
     >
-      <Card.Body className="text-center p-3 d-flex flex-column justify-content-center">
+      <Card.Body
+        id={`app-card-body-${app.id}`}
+        className="text-center p-3 d-flex flex-column justify-content-center align-items-center"
+        style={{ height: "100%" }}
+      >
         <div className="mb-2">
           <div
+            id={`app-card-icon-${app.id}`}
             style={{
               width: "40px",
               height: "40px",
@@ -200,15 +246,20 @@ function AppCard({
             {app.icon}
           </div>
         </div>
-        <Card.Title className={`h6 ${app.textColor} mb-1`}>
+        <Card.Title
+          id={`app-card-title-${app.id}`}
+          className={`h6 ${app.textColor} mb-2`}
+        >
           {app.title}
         </Card.Title>
         {!isImplemented && (
-          <div className="mt-auto">
-            <span className="badge bg-secondary" style={{ fontSize: "10px" }}>
-              Незабаром
-            </span>
-          </div>
+          <span
+            id={`app-card-soon-badge-${app.id}`}
+            className="badge bg-secondary"
+            style={{ fontSize: "10px" }}
+          >
+            Незабаром
+          </span>
         )}
       </Card.Body>
     </Card>
@@ -217,7 +268,11 @@ function AppCard({
   // Only wrap with Link if implemented
   if (isImplemented) {
     return (
-      <Link to={app.route} className="text-decoration-none">
+      <Link
+        id={`app-link-${app.id}`}
+        to={app.route}
+        className="text-decoration-none"
+      >
         {cardContent}
       </Link>
     );
@@ -260,12 +315,12 @@ const initialNotifications: FeedItem[] = [
 // App launcher data
 const appItems: AppItem[] = [
   {
-    id: "navigator",
-    title: "Навігатор",
-    icon: "🧭",
+    id: "units",
+    title: "Енергоблоки",
+    icon: "🏭",
     backgroundColor: "#0d6efd",
     textColor: "text-primary",
-    route: "/navigator",
+    route: "/units",
   },
   {
     id: "fuel-campaigns",
@@ -293,7 +348,7 @@ const appItems: AppItem[] = [
   },
   {
     id: "documents",
-    title: "Документ",
+    title: "Документи",
     icon: "📄",
     backgroundColor: "#6f42c1",
     textColor: "text-primary",
@@ -314,9 +369,14 @@ export default function Index() {
 
   const [newsItems, setNewsItems] = useState(initialNewsItems);
   const [notifications, setNotifications] = useState(initialNotifications);
+
+  // Set page title
+  useEffect(() => {
+    document.title = "Головна - КСАР";
+  }, []);
   // Check if an app is implemented
   const isAppImplemented = (appId: string) => {
-    return appId === "navigator" || appId === "documents"; // Navigator and documents are implemented
+    return appId === "units" || appId === "documents"; // Units and documents are implemented
   };
 
   // Common style for all app cards
@@ -365,6 +425,7 @@ export default function Index() {
   };
   return (
     <Container
+      id="index-page-container"
       fluid
       style={{
         height: "calc(100vh - 60px)",
@@ -374,6 +435,7 @@ export default function Index() {
       }}
     >
       <div
+        id="index-main-layout"
         style={{
           flex: 1,
           display: "flex",
@@ -383,6 +445,7 @@ export default function Index() {
       >
         {/* News - Left Side */}
         <div
+          id="index-news-column"
           style={{
             width: "16.666667%",
             display: "flex",
@@ -401,6 +464,7 @@ export default function Index() {
         </div>
         {/* App Launcher - Center */}
         <div
+          id="index-app-launcher-column"
           style={{
             width: "66.666667%",
             display: "flex",
@@ -408,10 +472,15 @@ export default function Index() {
             justifyContent: "center",
           }}
         >
-          <div style={{ maxWidth: "600px", width: "100%" }}>
-            <div className="text-center mb-5">
-              <h1 className="mb-3">ІАС КСАР</h1>
-              <p className="text-muted fs-5">
+          <div
+            id="index-app-launcher-content"
+            style={{ maxWidth: "600px", width: "100%" }}
+          >
+            <div id="index-hero-section" className="text-center mb-5">
+              <h1 id="index-main-title" className="mb-3">
+                ІАС КСАР
+              </h1>
+              <p id="index-main-description" className="text-muted fs-5">
                 Інформаційно-аналітична система
                 <br />
                 «Комплексна система аналізу результатів випробувань
@@ -419,6 +488,7 @@ export default function Index() {
                 зразків-свідків та ресурсу корпусів реакторів»
               </p>
               <hr
+                id="index-divider"
                 style={{
                   margin: "2rem 0",
                   border: "none",
@@ -430,6 +500,7 @@ export default function Index() {
             </div>{" "}
             {/* App Launcher Grid */}{" "}
             <div
+              id="index-app-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 160px)",
@@ -455,6 +526,7 @@ export default function Index() {
         </div>
         {/* Notifications - Right Side */}
         <div
+          id="index-notifications-column"
           style={{
             width: "16.666667%",
             display: "flex",

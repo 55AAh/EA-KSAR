@@ -6,6 +6,45 @@ export interface Unit {
   stage: string | null;
   power: number | null;
   start_date: string | null;
+  reactor_vessel?: {
+    vessel_id: number;
+    unit_id: number;
+    sectors: Sector[];
+    coupon_complects: CouponComplect[];
+  };
+}
+
+export interface Sector {
+  rpv_sector_id: number;
+  vessel_id: number;
+  sector_number: number;
+  placements: Placement[];
+}
+
+export interface Placement {
+  placement_id: number;
+  sector_id: number;
+  num_in_sector: number;
+  name: string;
+  coords: [number, number];
+  text_coords: [number, number];
+  loads: PlacementLoad[];
+  occupied: boolean;
+  last_sys_name: string | null;
+}
+
+export interface PlacementLoad {
+  container_sys_name: string;
+  load_date: string;
+  extract_date: string | null;
+}
+
+export interface CouponComplect {
+  coupon_complect_id: number;
+  vessel_id: number;
+  name: string;
+  complect_number: number | null;
+  is_additional: boolean;
 }
 
 export interface PlantUnits {
@@ -16,18 +55,14 @@ export interface PlantUnits {
   units: Unit[];
 }
 
-export interface Placement {
-  sector: number;
-  sector_num: number;
-  name: string;
-}
-
 export interface Plant {
   plant_id: number;
-  name: string;
+  num: number;
   sh_name: string;
-  name_eng: string;
+  name: string;
+  descr: string | null;
   sh_name_eng: string;
+  name_eng: string;
 }
 
 export interface SearchResult {

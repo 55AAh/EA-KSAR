@@ -61,20 +61,33 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   }
   return (
     <Container
+      id="login-page-container"
       fluid
       className="d-flex align-items-center justify-content-center min-vh-100"
     >
       <div
+        id="login-form-wrapper"
         style={{
           width: "320px",
           maxWidth: "90vw",
         }}
       >
-        <div className="p-4 border rounded shadow-sm bg-white">
-          <h3 className="text-center mb-4">Вхід в ІАС КСАР</h3>
+        <div
+          id="login-form-card"
+          className="p-4 border rounded shadow-sm bg-white"
+        >
+          <h3 id="login-page-title" className="text-center mb-4">
+            Вхід в ІАС КСАР
+          </h3>
 
-          <Form noValidate validated={validated} onSubmit={handleSubmit}>
+          <Form
+            noValidate
+            validated={validated}
+            onSubmit={handleSubmit}
+            id="login-form"
+          >
             <div
+              id="login-error-message"
               style={{
                 height: loginError ? "3.5rem" : "0",
                 overflow: "hidden",
@@ -85,9 +98,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 {loginError}
               </div>
             </div>
-            <Form.Group className="mb-3" controlId="formBasicLogin">
+            <Form.Group className="mb-3">
               <Form.Label>Логін</Form.Label>
               <Form.Control
+                id="login-username-input"
                 type="text"
                 placeholder="Введіть логін"
                 value={login}
@@ -102,9 +116,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 Логін не може бути порожнім
               </Form.Control.Feedback>
             </Form.Group>
-            <Form.Group className="mb-3" controlId="formBasicPassword">
+            <Form.Group className="mb-3">
               <Form.Label>Пароль</Form.Label>
               <Form.Control
+                id="login-password-input"
                 type="password"
                 placeholder="Введіть пароль"
                 value={password}
@@ -120,6 +135,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </Form.Control.Feedback>
             </Form.Group>
             <Button
+              id="login-submit-button"
               variant="primary"
               type="submit"
               className="w-100"
