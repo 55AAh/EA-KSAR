@@ -166,6 +166,7 @@ class Auth:
                 select(UserTable)
                 .join(UserSessionTable, UserSessionTable.user_id == UserTable.user_id)
                 .where(
+                    UserTable.enabled,
                     UserSessionTable.session_id == session_id,
                     UserSessionTable.expire_date > datetime.now(),
                 )
