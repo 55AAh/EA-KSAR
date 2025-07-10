@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import { usePageTitle } from "./hooks/usePageTitle";
 import { parseErrorResponse } from "./utils";
 
-import type { Unit } from "./types";
 // @ts-ignore
 import crossSectionImage from "./assets/cross-section.png";
+import { Unit2ResponseSchema } from "./types";
 
 // Loader function for Unit page
-export async function unitLoader({ params }: LoaderFunctionArgs) {
+export async function unitLoader2({ params }: LoaderFunctionArgs) {
   const { name_eng } = params;
 
   if (!name_eng) {
@@ -18,7 +18,7 @@ export async function unitLoader({ params }: LoaderFunctionArgs) {
     });
   }
 
-  const response = await fetch(`/api/unit/${name_eng}`);
+  const response = await fetch(`/api/unit2/${name_eng}`);
 
   if (!response.ok) {
     throw await parseErrorResponse(response);
@@ -27,8 +27,8 @@ export async function unitLoader({ params }: LoaderFunctionArgs) {
   return await response.json();
 }
 
-export default function Unit() {
-  const unit = useLoaderData() as Unit;
+export default function Unit2() {
+  const data = useLoaderData() as Unit2ResponseSchema;
   const [selectedPlacement, setSelectedPlacement] = useState<number | null>(
     null
   );
@@ -37,8 +37,8 @@ export default function Unit() {
 
   // Set page title with unit name
   useEffect(() => {
-    document.title = `${unit.name} - КСАР`;
-  }, [unit.name]);
+    document.title = `${data.unit.name} - КСАР`;
+  }, [data.unit.name]);
 
   return (
     <div
@@ -97,19 +97,19 @@ export default function Unit() {
             }}
           >
             <p>
-              <strong>Проект:</strong> {unit.design}
+              <strong>Проект:</strong> {data.unit.design}
             </p>
             <p>
               <strong>Потужність:</strong>
-              {unit.power ? `${unit.power} МВт` : "Не вказано"}
+              {data.unit.power ? `${data.unit.power} МВт` : "Не вказано"}
             </p>
             <p>
-              <strong>Етап:</strong> {unit.stage || "Не вказано"}
+              <strong>Етап:</strong> {data.unit.stage || "Не вказано"}
             </p>
             <p>
               <strong>Дата запуску:</strong>
-              {unit.start_date
-                ? new Date(unit.start_date).toLocaleDateString("uk-UA")
+              {data.unit.start_date
+                ? new Date(data.unit.start_date).toLocaleDateString("uk-UA")
                 : "Не вказано"}
             </p>
           </div>
@@ -141,7 +141,7 @@ export default function Unit() {
                 }}
               >
                 Вибране місце розташування -
-                {unit.reactor_vessel?.sectors
+                {data.unit.reactor_vessel.sectors
                   ?.flatMap((sector) => sector.placements)
                   ?.find(
                     (placement) => placement.placement_id === selectedPlacement
@@ -160,12 +160,13 @@ export default function Unit() {
                   }}
                 >
                   {(() => {
-                    const selectedPlacementData = unit.reactor_vessel?.sectors
-                      ?.flatMap((sector) => sector.placements)
-                      ?.find(
-                        (placement) =>
-                          placement.placement_id === selectedPlacement
-                      );
+                    const selectedPlacementData =
+                      data.unit.reactor_vessel.sectors
+                        ?.flatMap((sector) => sector.placements)
+                        ?.find(
+                          (placement) =>
+                            placement.placement_id === selectedPlacement
+                        );
 
                     const loads = selectedPlacementData?.loads || [];
 
@@ -312,7 +313,7 @@ export default function Unit() {
               fontWeight: "600",
             }}
           >
-            {unit.name}
+            {data.unit.name}
           </h3>
           <div
             id="cross-section-image-wrapper"
@@ -368,17 +369,29 @@ export default function Unit() {
                   }
                 }}
               >
-                {unit.reactor_vessel?.sectors?.map((sector) =>
-                  sector.placements?.map((placement) =>
-                    placement.coords ? (
+                {data.unit.reactor_vessel.sectors.map((sector) =>
+                  sector.placements.map(function (placement) {
+                    const coords = placement.coords;
+
+                    if (!coords) {
+                      console.warn(
+                        `No coords found for placement ${placement.placement_id}`
+                      );
+                      return null;
+                    }
+
+                    // For now, use the same coords for text until we add text_coords to backend
+                    const text_coords = coords;
+
+                    return (
                       <g
                         key={`placement-${placement.placement_id}`}
                         id={`placement-${placement.placement_id}`}
                       >
                         <circle
                           id={`placement-circle-highlight-${placement.placement_id}`}
-                          cx={placement.coords[0]}
-                          cy={placement.coords[1]}
+                          cx={coords[0]}
+                          cy={coords[1]}
                           r="150"
                           fill={
                             selectedPlacement === placement.placement_id
@@ -394,8 +407,8 @@ export default function Unit() {
                         />
                         <circle
                           id={`placement-circle-black-${placement.placement_id}`}
-                          cx={placement.coords[0]}
-                          cy={placement.coords[1]}
+                          cx={coords[0]}
+                          cy={coords[1]}
                           r="110"
                           fill="black"
                           style={{ cursor: "pointer" }}
@@ -410,40 +423,36 @@ export default function Unit() {
                         />
                         <circle
                           id={`placement-circle-inner-${placement.placement_id}`}
-                          cx={placement.coords[0]}
-                          cy={placement.coords[1]}
+                          cx={coords[0]}
+                          cy={coords[1]}
                           r="90"
                           fill="white"
                           style={{ pointerEvents: "none" }}
                         />
                         <circle
                           id={`placement-circle-core-${placement.placement_id}`}
-                          cx={placement.coords[0]}
-                          cy={placement.coords[1]}
+                          cx={coords[0]}
+                          cy={coords[1]}
                           r="70"
-                          fill={placement.occupied ? "black" : "white"}
+                          fill={true ? "black" : "white"}
                           style={{ pointerEvents: "none" }}
                         />
                         <text
                           id={`placement-text-${placement.placement_id}`}
-                          x={placement.text_coords[0]}
-                          y={placement.text_coords[1]}
+                          x={text_coords[0]}
+                          y={text_coords[1]}
                           textAnchor="middle"
                           dominantBaseline="central"
-                          fontWeight={
-                            placement.last_sys_name === placement.name
-                              ? "normal"
-                              : "bold"
-                          }
+                          fontWeight={true ? "normal" : "bold"}
                           fontSize="150"
                           fontFamily="sans-serif"
                           style={{ pointerEvents: "none" }}
                         >
-                          {placement.last_sys_name}
+                          {placement.name}
                         </text>
                       </g>
-                    ) : null
-                  )
+                    );
+                  })
                 )}
               </svg>
             </div>
@@ -471,10 +480,10 @@ export default function Unit() {
           >
             Комплекти зразків
           </h3>
-          {unit.reactor_vessel?.coupon_complects &&
-          unit.reactor_vessel.coupon_complects.length > 0 ? (
+          {data.unit.reactor_vessel?.coupon_complects &&
+          data.unit.reactor_vessel.coupon_complects.length > 0 ? (
             <div style={{ fontSize: "0.9rem", lineHeight: "1.6" }}>
-              {unit.reactor_vessel.coupon_complects.map((complect) => (
+              {data.unit.reactor_vessel.coupon_complects.map((complect) => (
                 <div
                   key={complect.coupon_complect_id}
                   id={`complect-${complect.coupon_complect_id}`}

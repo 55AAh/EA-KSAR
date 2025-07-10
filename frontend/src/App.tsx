@@ -16,6 +16,7 @@ import { createBrowserRouter, RouterProvider, Outlet } from "react-router";
 import Unit, { unitLoader } from "./Unit";
 import { useNavigation } from "react-router";
 import { Spinner, Container } from "react-bootstrap";
+import Unit2, { unitLoader2 } from "./Unit2";
 
 function LoadingScreen() {
   return (
@@ -74,6 +75,13 @@ const router = createBrowserRouter([
         path: "units/:name_eng",
         element: <Unit />,
         loader: unitLoader,
+        hydrateFallbackElement: <LoadingScreen />,
+        errorElement: <ErrorBoundary />,
+      },
+      {
+        path: "units2/:name_eng",
+        element: <Unit2 />,
+        loader: unitLoader2,
         hydrateFallbackElement: <LoadingScreen />,
         errorElement: <ErrorBoundary />,
       },

@@ -1,6 +1,6 @@
 from typing import List, Union
 from fastapi import APIRouter, HTTPException
-from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.orm import joinedload, aliased, selectinload
 from backend.db import DbSessionDep
 from backend.tables import (
     NppUnitTable,
@@ -14,42 +14,6 @@ from backend.tables import (
 )
 
 unit_router = APIRouter()
-
-
-class PlacementWithHistory:
-    """
-    Helper class to track the history of loads and extracts for a placement.
-    """
-
-    def __init__(self, placement: PlacementTable):
-        self.placement = placement
-        self.history: List[Union[CouponLoadTable, CouponExtractTable]] = []
-
-    def load(self, load: CouponLoadTable):
-        """Add a load event to the history."""
-        self.history.append(load)
-
-    def extract(self, extract: CouponExtractTable):
-        """Add an extract event to the history."""
-        self.history.append(extract)
-
-
-class ContainerSysWithHistory:
-    """
-    Helper class to track the history of loads and extracts for a container system.
-    """
-
-    def __init__(self, container_sys: ContainerSysTable):
-        self.container_sys = container_sys
-        self.history: List[Union[CouponLoadTable, CouponExtractTable]] = []
-
-    def load(self, load: CouponLoadTable):
-        """Add a load event to the history."""
-        self.history.append(load)
-
-    def extract(self, extract: CouponExtractTable):
-        """Add an extract event to the history."""
-        self.history.append(extract)
 
 
 placements_coords = {
@@ -144,6 +108,120 @@ placement_text_coords = {
 }  # fmt: skip
 
 
+@unit_router.get("/unit2/{name_eng}", operation_id="get_unit2")
+def unit_detail2(name_eng: str, db: DbSessionDep) -> dict:
+    """
+    Get specific unit by name_eng with complete placement and complects data.
+    """
+
+    print("loading unit:")
+
+    unit = (
+        db.query(NppUnitTable)
+        .options(
+            joinedload(NppUnitTable.reactor_vessel)
+            .joinedload(ReactorVesselTable.sectors)
+            .joinedload(ReactorVesselSectorTable.placements),
+            joinedload(NppUnitTable.reactor_vessel)
+            .joinedload(ReactorVesselTable.coupon_complects)
+            .joinedload(CouponComplectTable.container_systems),
+        )
+        .filter(NppUnitTable.name_eng == name_eng)
+        .first()
+    )
+
+    if unit is None:
+        raise HTTPException(status_code=404, detail="Unit not found")
+
+    print("loading loads:")
+
+    loads = (
+        db.query(CouponLoadTable)
+        .options(joinedload(CouponLoadTable.coupon_extract))
+        .join(CouponLoadTable.irrad_container_sys)
+        .join(ContainerSysTable.coupon_complect)
+        .join(CouponComplectTable.vessel)
+        .order_by(
+            CouponLoadTable.load_date, ContainerSysTable.container_sys_id
+        )  # ordering is crucial for correct history calculation
+        .filter(CouponComplectTable.vessel_id == unit.reactor_vessel.vessel_id)
+        .all()
+    )
+
+    print("collecting data:")
+
+    cs_load_ids: dict[int, list[int]] = {}
+    p_load_ids: dict[int, list[int]] = {}
+
+    for complect in unit.reactor_vessel.coupon_complects:
+        for cs in complect.container_systems:
+            cs_load_ids[cs.container_sys_id] = []
+
+    for sector in unit.reactor_vessel.sectors:
+        for placement in sector.placements:
+            p_load_ids[placement.placement_id] = []
+
+    for load in loads:
+        if load.coupon_extract is not None:
+            assert (
+                load.coupon_extract.irrad_container_sys_id
+                == load.irrad_container_sys_id
+            ), "Coupon load and extract must refer to the same container system"
+
+        assert load.irrad_container_sys_id in cs_load_ids, (
+            f"Container system {load.irrad_container_sys_id} not found in complects for unit {unit.name_eng}"
+        )
+
+        cs_load_ids[load.irrad_container_sys_id].append(load.cpn_load_id)
+
+        assert load.irrad_placement_id in p_load_ids, (
+            f"Placement {load.irrad_placement_id} not found in unit {unit.name_eng}"
+        )
+
+        p_load_ids[load.irrad_placement_id].append(load.cpn_load_id)
+
+    return {
+        "unit": {
+            "unit_id": unit.unit_id,
+            "plant_id": unit.plant_id,
+            "num": unit.num,
+            "name": unit.name,
+            "name_eng": unit.name_eng,
+            "design": unit.design,
+            "stage": unit.stage,
+            "power": unit.power,
+            "start_date": unit.start_date,
+            "reactor_vessel": {
+                "vessel_id": unit.reactor_vessel.vessel_id,
+                "unit_id": unit.reactor_vessel.unit_id,
+                "sectors": [
+                    {
+                        "rpv_sector_id": sector.rpv_sector_id,
+                        "sector_number": sector.sector_number,
+                        "placements": [
+                            {
+                                "placement_id": placement.placement_id,
+                                "name": placement.name,
+                                "num_in_sector": placement.num_in_sector,
+                                "coords": placements_coords[sector.sector_number][
+                                    placement.num_in_sector
+                                ],
+                                "coords_text": placement_text_coords[
+                                    sector.sector_number
+                                ][placement.num_in_sector],
+                            }
+                            for placement in sector.placements
+                        ],
+                    }
+                    for sector in unit.reactor_vessel.sectors
+                ],
+            },
+        },
+        "cs_load_ids": cs_load_ids,
+        "p_load_ids": p_load_ids,
+    }
+
+
 @unit_router.get("/unit/{name_eng}", operation_id="get_unit")
 def unit_detail(name_eng: str, db: DbSessionDep):
     """
@@ -179,108 +257,60 @@ def unit_detail(name_eng: str, db: DbSessionDep):
             status_code=500, detail="Unit reactor vessel data is missing"
         )
 
-    # TODO remove these two below:
-
-    # Build placement history tracking
-    placements: dict[int, PlacementWithHistory] = dict()
-    for sector in unit.reactor_vessel.sectors:
-        for placement in sector.placements:
-            p_hist = PlacementWithHistory(placement)
-            placements[placement.placement_id] = p_hist
-
-    # Build container system history tracking
-    container_sys_history: dict[int, ContainerSysWithHistory] = dict()
-    for complect in unit.reactor_vessel.coupon_complects:
-        for container_sys in complect.container_systems:
-            cs_hist = ContainerSysWithHistory(container_sys)
-            container_sys_history[container_sys.container_sys_id] = cs_hist
-
     # Get all coupon loads related to this unit with eager loading
     ReactorVesselTableAliased = aliased(ReactorVesselTable)
-    loads = (
-        db.query(CouponLoadTable)
-        .join(
-            PlacementTable,
-            PlacementTable.placement_id == CouponLoadTable.irrad_placement_id,
-        )
-        .join(
-            ReactorVesselSectorTable,
-            ReactorVesselSectorTable.rpv_sector_id == PlacementTable.sector_id,
-        )
-        .join(
-            ReactorVesselTable,
-            ReactorVesselTable.vessel_id == ReactorVesselSectorTable.vessel_id,
-        )
-        .join(
-            ContainerSysTable,
-            ContainerSysTable.container_sys_id
-            == CouponLoadTable.irrad_container_sys_id,
-        )
-        .join(
-            CouponComplectTable,
-            CouponComplectTable.coupon_complect_id
-            == ContainerSysTable.coupon_complect_id,
-        )
-        .join(
-            ReactorVesselTableAliased,
-            ReactorVesselTableAliased.vessel_id == CouponComplectTable.vessel_id,
-        )
-        .filter(
-            (ReactorVesselTable.vessel_id == unit.reactor_vessel.vessel_id)
-            | (ReactorVesselTableAliased.vessel_id == unit.reactor_vessel.vessel_id)
-        )
-        .options(
-            joinedload(CouponLoadTable.irrad_container_sys).joinedload(
-                ContainerSysTable.coupon_complect
-            ),
-            joinedload(CouponLoadTable.irrad_placement).joinedload(
-                PlacementTable.sector
-            ),
-            joinedload(CouponLoadTable.irrad_container_sys).joinedload(
-                ContainerSysTable.coupon_extracts
-            ),
-        )
-        .order_by(
-            CouponLoadTable.load_date,
-            ReactorVesselSectorTable.sector_number,
-            PlacementTable.num_in_sector,
-            CouponComplectTable.complect_number,
-            ContainerSysTable.name,
-        )
-        .all()
-    )
-
-    # Process loads in chronological order and build histories
-    # Loads are already ordered by load_date, sector, placement, complect, container_sys
-    for load in loads:
-        if load.irrad_placement.sector.vessel == unit.reactor_vessel:
-            pass  # native
-        else:
-            # non-native complects should probably be shown alongside native
-            raise NotImplementedError("Non-native complects are not implemented yet")
-
-        # Add load to placement history
-        placement_id = load.irrad_placement.placement_id
-        p_hist = placements[placement_id]
-        p_hist.load(load)
-
-        # Add load to container system history
-        container_sys_id = load.irrad_container_sys.container_sys_id
-        cs_hist = container_sys_history[container_sys_id]
-        cs_hist.load(load)
-
-        # Get extract for this container system (0 or 1 extract per container system)
-        extracts = load.irrad_container_sys.coupon_extracts
-        if extracts:
-            if len(extracts) > 1:
-                raise NotImplementedError(
-                    "Container system cannot be extracted twice, they should be treated as a separate entities (one became another via modernization)"
-                )
-
-            extract = extracts[0]
-
-            p_hist.extract(extract)
-            cs_hist.extract(extract)
+    # loads = (
+    #     db.query(CouponLoadTable)
+    #     .join(
+    #         PlacementTable,
+    #         PlacementTable.placement_id == CouponLoadTable.irrad_placement_id,
+    #     )
+    #     .join(
+    #         ReactorVesselSectorTable,
+    #         ReactorVesselSectorTable.rpv_sector_id == PlacementTable.sector_id,
+    #     )
+    #     .join(
+    #         ReactorVesselTable,
+    #         ReactorVesselTable.vessel_id == ReactorVesselSectorTable.vessel_id,
+    #     )
+    #     .join(
+    #         ContainerSysTable,
+    #         ContainerSysTable.container_sys_id
+    #         == CouponLoadTable.irrad_container_sys_id,
+    #     )
+    #     .join(
+    #         CouponComplectTable,
+    #         CouponComplectTable.coupon_complect_id
+    #         == ContainerSysTable.coupon_complect_id,
+    #     )
+    #     .join(
+    #         ReactorVesselTableAliased,
+    #         ReactorVesselTableAliased.vessel_id == CouponComplectTable.vessel_id,
+    #     )
+    #     .filter(
+    #         (ReactorVesselTable.vessel_id == unit.reactor_vessel.vessel_id)
+    #         | (ReactorVesselTableAliased.vessel_id == unit.reactor_vessel.vessel_id)
+    #     )
+    #     .options(
+    #         joinedload(CouponLoadTable.irrad_container_sys).joinedload(
+    #             ContainerSysTable.coupon_complect
+    #         ),
+    #         joinedload(CouponLoadTable.irrad_placement).joinedload(
+    #             PlacementTable.sector
+    #         ),
+    #         joinedload(CouponLoadTable.irrad_container_sys).joinedload(
+    #             ContainerSysTable.coupon_extracts
+    #         ),
+    #     )
+    #     .order_by(
+    #         CouponLoadTable.load_date,
+    #         ReactorVesselSectorTable.sector_number,
+    #         PlacementTable.num_in_sector,
+    #         CouponComplectTable.complect_number,
+    #         ContainerSysTable.name,
+    #     )
+    #     .all()
+    # )
 
     def process_placement(placement: PlacementTable):
         loads = []
@@ -328,6 +358,56 @@ def unit_detail(name_eng: str, db: DbSessionDep):
             ).get(placement.num_in_sector),
         }
 
+    def process_container_sys(container_sys: ContainerSysTable):
+        loads = container_sys.coupon_loads
+        if len(loads) > 1:
+            raise NotImplementedError(
+                "Container system cannot be loaded twice, they should be treated as a separate entities (one became another via modernization)"
+            )
+
+        extracts = container_sys.coupon_extracts
+        if len(extracts) > 1:
+            raise NotImplementedError(
+                "Container system cannot be extracted twice, they should be treated as a separate entities (one became another via modernization)"
+            )
+
+        load = loads[0] if loads else None
+        extract = extracts[0] if extracts else None
+
+        if load is not None:
+            if load.irrad_placement.sector.vessel != unit.reactor_vessel:
+                # non-native container systems should probably be shown alongside native
+                raise NotImplementedError(
+                    "Non-native container systems are not implemented yet"
+                )
+
+            load_status = {
+                "cpn_load_id": load.cpn_load_id,
+                "load_date": load.load_date,
+                "irrad_placement": {
+                    "placement_id": load.irrad_placement.placement_id,
+                    "name": load.irrad_placement.name,
+                },
+                "extract": {
+                    "cpn_extract_id": extract.cpn_extract_id,
+                    "extract_date": extract.extract_date,
+                }
+                if extract
+                else None,
+            }
+        else:
+            if extract is not None:
+                raise NotImplementedError(
+                    "Container system cannot be extracted without being loaded first"
+                )
+            load_status = None
+
+        return {
+            "container_sys_id": container_sys.container_sys_id,
+            "name": container_sys.name,
+            "load_status": load_status,
+        }
+
     # Return unit data with all necessary fields
     return {
         "unit_id": unit.unit_id,
@@ -367,10 +447,16 @@ def unit_detail(name_eng: str, db: DbSessionDep):
             "coupon_complects": [
                 {
                     "coupon_complect_id": complect.coupon_complect_id,
-                    "vessel_id": complect.vessel_id,
                     "name": complect.name,
                     "complect_number": complect.complect_number,
                     "is_additional": complect.is_additional,
+                    "container_systems": [
+                        process_container_sys(container_sys)
+                        for container_sys in sorted(
+                            complect.container_systems,
+                            key=lambda cs: cs.name or "",
+                        )
+                    ],
                 }
                 for complect in sorted(
                     unit.reactor_vessel.coupon_complects,

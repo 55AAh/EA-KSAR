@@ -6,6 +6,7 @@ from backend.tables.base import BaseTable
 
 
 if TYPE_CHECKING:
+    from .coupon_extract import CouponExtractTable
     from .container_sys import ContainerSysTable
     from .placement import PlacementTable
 
@@ -20,9 +21,10 @@ class CouponLoadTable(BaseTable):
         Integer,
         Identity(),
         primary_key=True,
+        unique=True,
         comment="ID завантаження ЗС",
     )
-    load_date: Mapped[str | None] = mapped_column(
+    load_date: Mapped[str] = mapped_column(
         String(15),
         nullable=True,
         comment="Дата завантаження",
@@ -37,6 +39,10 @@ class CouponLoadTable(BaseTable):
     )
 
     # Relationships
+    coupon_extract: Mapped["CouponExtractTable"] = relationship(
+        back_populates="coupon_load",
+        uselist=False,
+    )
     irrad_container_sys: Mapped["ContainerSysTable"] = relationship(
         back_populates="coupon_loads",
     )

@@ -6,6 +6,7 @@ from backend.tables.base import BaseTable
 
 
 if TYPE_CHECKING:
+    from .coupon_load import CouponLoadTable
     from .container_sys import ContainerSysTable
 
 
@@ -21,7 +22,11 @@ class CouponExtractTable(BaseTable):
         primary_key=True,
         comment="ID вивантаження ЗС",
     )
-    extract_date: Mapped[str | None] = mapped_column(
+    cpn_load_id: Mapped[int] = mapped_column(
+        ForeignKey("T_CPN_LOADS.cpn_load_id"),
+        comment="ID завантаження ЗС",
+    )
+    extract_date: Mapped[str] = mapped_column(
         String(15),
         nullable=True,
         comment="Дата вивантаження",
@@ -32,6 +37,9 @@ class CouponExtractTable(BaseTable):
     )
 
     # Relationships
+    coupon_load: Mapped["CouponLoadTable"] = relationship(
+        back_populates="coupon_extract",
+    )
     irrad_container_sys: Mapped["ContainerSysTable"] = relationship(
         back_populates="coupon_extracts",
     )

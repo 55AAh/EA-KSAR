@@ -25,6 +25,7 @@ class ReactorVesselTable(BaseTable):
     )
     unit_id: Mapped[int] = mapped_column(
         ForeignKey("T_NPP_UNITS.unit_id"),
+        unique=True,
         comment="ID енергоблоку",
     )
 
