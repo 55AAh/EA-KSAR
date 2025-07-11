@@ -1,13 +1,35 @@
 import { useLoaderData, LoaderFunctionArgs } from "react-router";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePageTitle } from "./hooks/usePageTitle";
 import { parseErrorResponse } from "./utils";
+import { UnitModel, CouponLoadModel } from "./types";
 
 // @ts-ignore
 import crossSectionImage from "./assets/cross-section.png";
-import { Unit2ResponseSchema } from "./types";
 
-// Loader function for Unit page
+// Endpoint-specific interfaces for /unit2/{name_eng} response
+// These match the Pydantic models in backend/api/unit.py
+
+export interface PlacementDetailsModel {
+  occupied: boolean;
+  last_sys_name?: string | null;
+  load_ids: number[];
+  coords: [number, number];
+  text_coords: [number, number];
+}
+
+export interface ContainerSysDetailsModel {
+  load_ids: number[];
+}
+
+export interface UnitDetailsModel {
+  unit: UnitModel;
+  loads: Record<number, CouponLoadModel>;
+  container_systems_details: Record<number, ContainerSysDetailsModel>;
+  placements_details: Record<number, PlacementDetailsModel>;
+}
+
+// Loader function for Unit2 page
 export async function unitLoader2({ params }: LoaderFunctionArgs) {
   const { name_eng } = params;
 
@@ -28,7 +50,7 @@ export async function unitLoader2({ params }: LoaderFunctionArgs) {
 }
 
 export default function Unit2() {
-  const data = useLoaderData() as Unit2ResponseSchema;
+  const data = useLoaderData() as UnitDetailsModel;
   const [selectedPlacement, setSelectedPlacement] = useState<number | null>(
     null
   );
@@ -114,179 +136,50 @@ export default function Unit2() {
             </p>
           </div>
 
-          {/* Spacer to push placement card to bottom */}
-          <div style={{ flex: 1 }} />
-
-          {/* Selected Placement Card */}
-          {selectedPlacement && (
-            <div
-              id="selected-placement-card"
+          {/* Raw JSON Data Viewer */}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+            }}
+          >
+            <h4
               style={{
-                padding: "1rem",
-                backgroundColor: "#fff3cd",
-                borderRadius: "6px",
-                border: "1px solid #ffeaa7",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                marginBottom: "0.5rem",
+                color: "#495057",
+                fontSize: "1rem",
                 flexShrink: 0,
               }}
             >
-              <h5
-                id="selected-placement-title"
+              Raw Data
+            </h4>
+            <div
+              style={{
+                flex: 1,
+                overflow: "auto",
+                backgroundColor: "#f8f9fa",
+                border: "1px solid #dee2e6",
+                borderRadius: "4px",
+                padding: "0.5rem",
+              }}
+            >
+              <pre
                 style={{
                   margin: 0,
-                  marginBottom: "0.5rem",
-                  color: "#856404",
-                  fontSize: "1rem",
-                  fontWeight: "600",
+                  fontSize: "0.65rem",
+                  lineHeight: "1.3",
+                  color: "#495057",
+                  fontFamily: "Monaco, Consolas, 'Courier New', monospace",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
                 }}
               >
-                Вибране місце розташування -
-                {data.unit.reactor_vessel.sectors
-                  ?.flatMap((sector) => sector.placements)
-                  ?.find(
-                    (placement) => placement.placement_id === selectedPlacement
-                  )?.name || "Невідоме"}
-              </h5>
-              <div style={{ fontSize: "0.85rem", color: "#856404" }}>
-                <strong>Історія завантажень:</strong>
-                <div
-                  id="placement-loads-table-container"
-                  style={{
-                    marginTop: "0.5rem",
-                    maxHeight: "200px",
-                    overflowY: "auto",
-                    border: "1px solid #dee2e6",
-                    borderRadius: "4px",
-                  }}
-                >
-                  {(() => {
-                    const selectedPlacementData =
-                      data.unit.reactor_vessel.sectors
-                        ?.flatMap((sector) => sector.placements)
-                        ?.find(
-                          (placement) =>
-                            placement.placement_id === selectedPlacement
-                        );
-
-                    const loads = selectedPlacementData?.loads || [];
-
-                    if (loads.length === 0) {
-                      return (
-                        <div
-                          style={{
-                            padding: "1rem",
-                            textAlign: "center",
-                            color: "#6c757d",
-                            fontStyle: "italic",
-                          }}
-                        >
-                          Завантажень не знайдено
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <table
-                        id="placement-loads-table"
-                        style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        <thead>
-                          <tr>
-                            <th
-                              style={{
-                                padding: "8px",
-                                backgroundColor: "#e9ecef",
-                                border: "1px solid #dee2e6",
-                                textAlign: "center",
-                                fontWeight: "600",
-                                color: "#495057",
-                              }}
-                            >
-                              Збірка
-                            </th>
-                            <th
-                              style={{
-                                padding: "8px",
-                                backgroundColor: "#e9ecef",
-                                border: "1px solid #dee2e6",
-                                textAlign: "center",
-                                fontWeight: "600",
-                                color: "#495057",
-                              }}
-                            >
-                              Завантажено
-                            </th>
-                            <th
-                              style={{
-                                padding: "8px",
-                                backgroundColor: "#e9ecef",
-                                border: "1px solid #dee2e6",
-                                textAlign: "center",
-                                fontWeight: "600",
-                                color: "#495057",
-                              }}
-                            >
-                              Вивантажено
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {loads.map((load, index) => (
-                            <tr
-                              key={index}
-                              style={{
-                                backgroundColor: load.extract_date
-                                  ? "white"
-                                  : "#ffe6e6",
-                              }}
-                            >
-                              <td
-                                style={{
-                                  padding: "6px 8px",
-                                  border: "1px solid #dee2e6",
-                                  textAlign: "center",
-                                  color: "#495057",
-                                }}
-                              >
-                                {load.container_sys_name}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "6px 8px",
-                                  border: "1px solid #dee2e6",
-                                  textAlign: "center",
-                                  color: "#495057",
-                                }}
-                              >
-                                {load.load_date}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "6px 8px",
-                                  border: "1px solid #dee2e6",
-                                  textAlign: "center",
-                                  color: "#495057",
-                                  fontStyle: load.extract_date
-                                    ? "normal"
-                                    : "italic",
-                                }}
-                              >
-                                {load.extract_date || "опромінюється"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    );
-                  })()}
-                </div>
-              </div>
+                {JSON.stringify(data, null, 2)}
+              </pre>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Center panel - Interactive Cross-section */}
@@ -369,19 +262,19 @@ export default function Unit2() {
                   }
                 }}
               >
-                {data.unit.reactor_vessel.sectors.map((sector) =>
-                  sector.placements.map(function (placement) {
-                    const coords = placement.coords;
+                {/* Real placements from data */}
+                {data.unit.reactor_vessel?.sectors?.map((sector) =>
+                  sector.placements?.map((placement) => {
+                    const placementDetails =
+                      data.placements_details[placement.placement_id];
 
-                    if (!coords) {
-                      console.warn(
-                        `No coords found for placement ${placement.placement_id}`
-                      );
-                      return null;
-                    }
+                    console.assert(
+                      placementDetails !== undefined,
+                      "Placement details missing"
+                    );
 
-                    // For now, use the same coords for text until we add text_coords to backend
-                    const text_coords = coords;
+                    const coords = placementDetails.coords;
+                    const textCoords = placementDetails.text_coords || coords;
 
                     return (
                       <g
@@ -434,16 +327,16 @@ export default function Unit2() {
                           cx={coords[0]}
                           cy={coords[1]}
                           r="70"
-                          fill={true ? "black" : "white"}
+                          fill={placementDetails.occupied ? "black" : "white"}
                           style={{ pointerEvents: "none" }}
                         />
                         <text
                           id={`placement-text-${placement.placement_id}`}
-                          x={text_coords[0]}
-                          y={text_coords[1]}
+                          x={textCoords[0]}
+                          y={textCoords[1]}
                           textAnchor="middle"
                           dominantBaseline="central"
-                          fontWeight={true ? "normal" : "bold"}
+                          fontWeight="normal"
                           fontSize="150"
                           fontFamily="sans-serif"
                           style={{ pointerEvents: "none" }}
@@ -619,72 +512,19 @@ export default function Unit2() {
                                 >
                                   {containerSys.name}
                                 </td>
-                                {containerSys.load_status ? (
-                                  <>
-                                    <td
-                                      style={{
-                                        width: "30%",
-                                        padding: "4px 8px",
-                                        border: "1px solid #e9ecef",
-                                        textAlign: "center",
-                                        color: "#28a745",
-                                      }}
-                                    >
-                                      {new Date(
-                                        containerSys.load_status.load_date
-                                      ).toLocaleDateString("uk-UA")}
-                                    </td>
-                                    <td
-                                      style={{
-                                        width: "17%",
-                                        padding: "4px 8px",
-                                        border: "1px solid #e9ecef",
-                                        textAlign: "center",
-                                        color: "#495057",
-                                      }}
-                                    >
-                                      {
-                                        containerSys.load_status.irrad_placement
-                                          .name
-                                      }
-                                    </td>
-                                    <td
-                                      style={{
-                                        width: "35%",
-                                        padding: "4px 8px",
-                                        border: "1px solid #e9ecef",
-                                        textAlign: "center",
-                                        color: containerSys.load_status.extract
-                                          ? "#dc3545"
-                                          : "#007bff",
-                                        fontStyle: containerSys.load_status
-                                          .extract
-                                          ? "normal"
-                                          : "italic",
-                                      }}
-                                    >
-                                      {containerSys.load_status.extract
-                                        ? new Date(
-                                            containerSys.load_status.extract.extract_date
-                                          ).toLocaleDateString("uk-UA")
-                                        : "опромінюється"}
-                                    </td>
-                                  </>
-                                ) : (
-                                  <td
-                                    colSpan={3}
-                                    style={{
-                                      width: "75%",
-                                      padding: "4px 8px",
-                                      border: "1px solid #e9ecef",
-                                      textAlign: "center",
-                                      color: "#6c757d",
-                                      fontStyle: "italic",
-                                    }}
-                                  >
-                                    Не завантажена
-                                  </td>
-                                )}
+                                <td
+                                  colSpan={3}
+                                  style={{
+                                    width: "82%",
+                                    padding: "4px 8px",
+                                    border: "1px solid #e9ecef",
+                                    textAlign: "center",
+                                    color: "#6c757d",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  Не завантажена
+                                </td>
                               </tr>
                             ))}
                           </tbody>

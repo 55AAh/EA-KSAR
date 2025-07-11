@@ -15,4 +15,5 @@ dependencies = [
     "uvicorn[standard]>=0.34.3",
     "openpyxl>=3.1.2",
     "python-multipart>=0.0.20",
+    "pydantic>=2.11.7",
 ]

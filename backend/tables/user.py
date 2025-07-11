@@ -57,7 +57,7 @@ class UserTable(BaseTable):
 class UserSessionTable(BaseTable):
     __tablename__ = "T_USER_SESSIONS"
     __table_args__ = {
-        "comment": "Сесії користувачів",
+        "comment": "Сесія користувача",
     }
 
     session_id: Mapped[str] = mapped_column(

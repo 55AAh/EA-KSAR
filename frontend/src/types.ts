@@ -1,3 +1,70 @@
+// Global types that match backend/models Pydantic schemas
+
+export interface UnitModel {
+  unit_id: number;
+  plant_id: number;
+  num: number;
+  name: string;
+  name_eng: string;
+  design: string;
+  stage: string | null;
+  power: number;
+  start_date: string | null;
+  reactor_vessel: ReactorVesselModel | null;
+}
+
+export interface ReactorVesselModel {
+  vessel_id: number;
+  unit_id: number;
+  sectors: ReactorVesselSectorModel[] | null;
+  coupon_complects: CouponComplectModel[] | null;
+}
+
+export interface ReactorVesselSectorModel {
+  rpv_sector_id: number;
+  vessel_id: number;
+  sector_number: number;
+  placements: PlacementModel[] | null;
+}
+
+export interface PlacementModel {
+  placement_id: number;
+  sector_id: number;
+  num_in_sector: number;
+  name: string;
+}
+
+export interface CouponComplectModel {
+  coupon_complect_id: number;
+  vessel_id: number;
+  name: string;
+  compect_number: number | null;
+  is_additional: boolean;
+  container_systems: ContainerSysModel[] | null;
+}
+
+export interface ContainerSysModel {
+  container_sys_id: number;
+  coupon_complect_id: number;
+  name: string;
+}
+
+export interface CouponLoadModel {
+  cpn_load_id: number;
+  load_date: string;
+  irrad_container_sys_id: number;
+  irrad_placement_id: number;
+  coupon_extract: CouponExtractModel | null;
+}
+
+export interface CouponExtractModel {
+  cpn_extract_id: number;
+  cpn_load_id: number;
+  extract_date: string;
+  irrad_container_sys_id: number;
+}
+
+// Legacy interfaces for existing components (to be migrated gradually)
 export interface Unit {
   unit_id: number;
   plant_id: number;
@@ -70,6 +137,7 @@ export interface ContainerSystemLoadStatus {
   };
 }
 
+// Other global types
 export interface PlantUnits {
   name: string;
   sh_name: string;
@@ -93,7 +161,7 @@ export interface SearchResult {
   type: string;
   name: string;
   description: string;
-  data?: any; // Additional data for specific result types (Plant, Unit, etc.)
+  data?: any;
 }
 
 export interface Document {
@@ -106,81 +174,4 @@ export interface Document {
   file_size: number;
   file_extension: string;
   status: string;
-}
-
-// Updated interfaces to match backend Pydantic schemas exactly
-
-// Schema for container system in unit2 response
-export interface ContainerSystemSchema {
-  container_sys_id: number;
-  name: string;
-}
-
-// Schema for placement in unit2 response
-export interface PlacementSchema {
-  placement_id: number;
-  name: string;
-  num_in_sector: number;
-  coords?: [number, number] | null;
-}
-
-// Schema for reactor vessel sector in unit2 response
-export interface ReactorVesselSectorSchema {
-  rpv_sector_id: number;
-  sector_number: number;
-  placements: PlacementSchema[];
-}
-
-// Schema for coupon complect in unit2 response
-export interface CouponComplectSchema {
-  coupon_complect_id: number;
-  name: string;
-  complect_number: number | null;
-  is_additional: boolean | null;
-  container_systems: ContainerSystemSchema[];
-}
-
-// Schema for reactor vessel in unit2 response
-export interface ReactorVesselSchema {
-  vessel_id: number;
-  sectors: ReactorVesselSectorSchema[];
-  coupon_complects: CouponComplectSchema[];
-}
-
-// Schema for the unit in unit2 response
-export interface UnitSchema {
-  unit_id: number;
-  plant_id: number;
-  num: number;
-  name: string;
-  name_eng: string;
-  design: string;
-  stage: string | null;
-  power: number;
-  start_date: string | null;
-  reactor_vessel: ReactorVesselSchema;
-}
-
-// Schema for coupon extract
-export interface CouponExtractSchema {
-  cpn_extract_id: number;
-  extract_date: string;
-  irrad_container_sys_id: number;
-}
-
-// Schema for coupon load
-export interface CouponLoadSchema {
-  cpn_load_id: number;
-  load_date: string;
-  irrad_container_sys_id: number;
-  irrad_placement_id: number;
-  coupon_extract?: CouponExtractSchema | null;
-}
-
-// Main response schema for unit_detail2
-export interface Unit2ResponseSchema {
-  unit: UnitSchema;
-  loads: Record<number, CouponLoadSchema>;
-  cs_load_ids: Record<number, number[]>;
-  p_load_ids: Record<number, number[]>;
 }

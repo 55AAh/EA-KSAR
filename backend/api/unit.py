@@ -1,12 +1,13 @@
-from typing import List, Union
+from typing import Optional
 from fastapi import APIRouter, HTTPException
-from sqlalchemy.orm import joinedload, aliased, selectinload
+from pydantic import BaseModel
+from sqlalchemy.orm import joinedload
 from backend.db import DbSessionDep
+from backend.models import UnitModel, CouponLoadModel
 from backend.tables import (
     NppUnitTable,
     PlacementTable,
     CouponLoadTable,
-    CouponExtractTable,
     ContainerSysTable,
     ReactorVesselSectorTable,
     CouponComplectTable,
@@ -108,8 +109,30 @@ placement_text_coords = {
 }  # fmt: skip
 
 
+###########
+
+
+class PlacementDetailsModel(BaseModel):
+    occupied: bool
+    last_sys_name: Optional[str] = None
+    load_ids: list[int]
+    coords: tuple[int, int]
+    text_coords: tuple[int, int]
+
+
+class ContainerSysDetailsModel(BaseModel):
+    load_ids: list[int]
+
+
+class UnitDetailsModel(BaseModel):
+    unit: UnitModel
+    loads: dict[int, CouponLoadModel]
+    placements_details: dict[int, PlacementDetailsModel]
+    container_systems_details: dict[int, ContainerSysDetailsModel]
+
+
 @unit_router.get("/unit2/{name_eng}", operation_id="get_unit2")
-def unit_detail2(name_eng: str, db: DbSessionDep) -> dict:
+def unit_detail2(name_eng: str, db: DbSessionDep) -> UnitDetailsModel:
     """
     Get specific unit by name_eng with complete placement and complects data.
     """
@@ -180,46 +203,65 @@ def unit_detail2(name_eng: str, db: DbSessionDep) -> dict:
 
         p_load_ids[load.irrad_placement_id].append(load.cpn_load_id)
 
-    return {
-        "unit": {
-            "unit_id": unit.unit_id,
-            "plant_id": unit.plant_id,
-            "num": unit.num,
-            "name": unit.name,
-            "name_eng": unit.name_eng,
-            "design": unit.design,
-            "stage": unit.stage,
-            "power": unit.power,
-            "start_date": unit.start_date,
-            "reactor_vessel": {
-                "vessel_id": unit.reactor_vessel.vessel_id,
-                "unit_id": unit.reactor_vessel.unit_id,
-                "sectors": [
-                    {
-                        "rpv_sector_id": sector.rpv_sector_id,
-                        "sector_number": sector.sector_number,
-                        "placements": [
-                            {
-                                "placement_id": placement.placement_id,
-                                "name": placement.name,
-                                "num_in_sector": placement.num_in_sector,
-                                "coords": placements_coords[sector.sector_number][
-                                    placement.num_in_sector
-                                ],
-                                "coords_text": placement_text_coords[
-                                    sector.sector_number
-                                ][placement.num_in_sector],
-                            }
-                            for placement in sector.placements
-                        ],
-                    }
-                    for sector in unit.reactor_vessel.sectors
-                ],
-            },
-        },
-        "cs_load_ids": cs_load_ids,
-        "p_load_ids": p_load_ids,
+    # format info
+
+    unit_info = UnitModel.model_validate(unit, from_attributes=True)
+
+    ####################
+    # flatten response, send container sys as a separate list, then relate to complects via one-to-many
+    ####################
+
+    loads_info = {
+        load.cpn_load_id: CouponLoadModel.model_validate(load, from_attributes=True)
+        for load in loads
     }
+
+    container_sys_details = {
+        container_sys.container_sys_id: ContainerSysDetailsModel(
+            load_ids=cs_load_ids[container_sys.container_sys_id]
+        )
+        for complect in unit.reactor_vessel.coupon_complects
+        for container_sys in complect.container_systems
+    }
+
+    def process_placement(placement: PlacementTable) -> PlacementDetailsModel:
+        sector_number, num_in_sector = (
+            placement.sector.sector_number,
+            placement.num_in_sector,
+        )
+
+        load_ids = p_load_ids[placement.placement_id]
+        loads = [loads_info[load_id] for load_id in load_ids]
+        loads.sort(key=lambda load: load.load_date)
+
+        occupied = False
+        last_sys_name = None
+
+        if loads:
+            occupied = loads[-1].coupon_extract is None
+
+        return PlacementDetailsModel(
+            occupied=occupied,
+            last_sys_name=last_sys_name,
+            load_ids=load_ids,
+            coords=placements_coords[sector_number][num_in_sector],
+            text_coords=placement_text_coords[sector_number][num_in_sector],
+        )
+
+    placement_details = {
+        placement.placement_id: process_placement(placement)
+        for sector in unit.reactor_vessel.sectors
+        for placement in sector.placements
+    }
+
+    unit_details = UnitDetailsModel(
+        unit=unit_info,
+        loads=loads_info,
+        container_systems_details=container_sys_details,
+        placements_details=placement_details,
+    )
+
+    return unit_details
 
 
 @unit_router.get("/unit/{name_eng}", operation_id="get_unit")
@@ -256,9 +298,6 @@ def unit_detail(name_eng: str, db: DbSessionDep):
         raise HTTPException(
             status_code=500, detail="Unit reactor vessel data is missing"
         )
-
-    # Get all coupon loads related to this unit with eager loading
-    ReactorVesselTableAliased = aliased(ReactorVesselTable)
     # loads = (
     #     db.query(CouponLoadTable)
     #     .join(
